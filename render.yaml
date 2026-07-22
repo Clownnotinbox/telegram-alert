@@ -5,7 +5,6 @@ services:
     plan: free
     buildCommand: npm install && npm run build
     startCommand: npm start
-    initialDeployHook: npm run telegram:setup
     healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION

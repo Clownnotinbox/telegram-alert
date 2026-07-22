@@ -25,7 +25,6 @@ await telegram("setWebhook", {
   allowed_updates: ["message", "chat_member", "my_chat_member", "callback_query"],
   drop_pending_updates: false,
 });
-await import("./telegram-profile.mjs");
 
 const bot = await telegram("getMe", {});
 console.log(`Telegram self-service configured for @${bot.username}`);
