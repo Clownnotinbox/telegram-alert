@@ -7,8 +7,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host") || "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
   const metadataBase = new URL(`${protocol}://${host}`);
-  const title = "Telegram Alert — уведомления о подписчиках";
-  const description = "Живой Telegram-оверлей с аккуратным уведомлением о новом подписчике.";
+  const title = "Telegram Alert — минималистичный оверлей для OBS";
+  const description = "Последний подписчик Telegram в OBS и три стиля, которые переключаются прямо из бота.";
 
   return {
     metadataBase,
@@ -18,9 +18,9 @@ export async function generateMetadata(): Promise<Metadata> {
       title,
       description,
       type: "website",
-      images: [{ url: "/og.png", width: 1662, height: 946, alt: "Telegram Alert" }],
+      images: [{ url: "/og-minimal.png", width: 1536, height: 1024, alt: "Минималистичный Telegram Alert" }],
     },
-    twitter: { card: "summary_large_image", title, description, images: ["/og.png"] },
+    twitter: { card: "summary_large_image", title, description, images: ["/og-minimal.png"] },
   };
 }
 

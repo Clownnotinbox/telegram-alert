@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     body: JSON.stringify({
       url: webhook,
       secret_token: secret,
-      allowed_updates: ["message", "chat_member"],
+      allowed_updates: ["message", "chat_member", "callback_query"],
       drop_pending_updates: false,
     }),
   });
@@ -24,5 +24,15 @@ export async function POST(request: Request) {
   if (!response.ok || !result.ok) {
     return Response.json({ error: result.description || "Telegram отклонил webhook" }, { status: 502 });
   }
+  await fetch(`https://api.telegram.org/bot${token}/setMyCommands`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      commands: [
+        { command: "start", description: "Проверить бота" },
+        { command: "style", description: "Выбрать стиль оверлея" },
+      ],
+    }),
+  }).catch(() => undefined);
   return Response.json({ ok: true, webhook, description: result.description });
 }

@@ -1,10 +1,19 @@
 # Telegram Alert
 
-Telegram bot + browser overlay for showing the latest channel subscriber in OBS.
+Минималистичный Telegram-оверлей для OBS. Он постоянно показывает последнего подписчика и мягко заменяет карточку, когда в канал приходит новый человек.
 
-## Local development
+## Что умеет
 
-Requires Node.js 22.13 or newer.
+- отслеживает новых участников Telegram-канала через `chat_member`;
+- хранит последнего подписчика в PostgreSQL на Render или D1 локально;
+- показывает уведомления в OBS без перезагрузки Browser Source;
+- предлагает три оформления: **Графит**, **Светлый** и **Только текст**;
+- меняет стиль по команде `/style` прямо в Telegram-боте;
+- при желании проигрывает короткий звук через URL `/overlay?sound=1`.
+
+## Локальный запуск
+
+Нужен Node.js 22.13 или новее.
 
 ```bash
 cp .env.example .env.local
@@ -12,18 +21,33 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`. The test button works without Telegram credentials in development.
+Откройте `http://localhost:3000`. В development тестовое уведомление работает без Telegram-токена.
 
-## Telegram setup
+## Настройка Telegram и Render
 
-1. Create a bot with `@BotFather` and add it to the channel as an administrator.
-2. Add `BOT_TOKEN` and `TELEGRAM_CHANNEL_ID` to Render. The included Blueprint generates `TELEGRAM_WEBHOOK_SECRET` and `ADMIN_KEY` automatically; `PUBLIC_URL` is optional.
-3. Deploy the service.
-4. Open the dashboard, enter `ADMIN_KEY`, and click **Подключить webhook**.
-5. Add `https://YOUR-SERVICE.onrender.com/overlay` to OBS as a Browser Source.
+1. Создайте бота через `@BotFather` и добавьте его администратором канала.
+2. В Render выберите **New → Blueprint**, подключите этот репозиторий и подтвердите файл `render.yaml`. Blueprint создаст Web Service и PostgreSQL вместе.
+3. В переменных Render укажите `BOT_TOKEN` и `TELEGRAM_CHANNEL_ID`. Blueprint сам создаст `TELEGRAM_WEBHOOK_SECRET` и `ADMIN_KEY`.
+4. Рекомендуется указать `ADMIN_CHAT_ID` — ID вашего Telegram-аккаунта или чата, которому разрешено менять дизайн. Без него `/style` доступна всем пользователям бота.
+5. После деплоя откройте панель сайта, вставьте `ADMIN_KEY` и нажмите **Подключить Telegram**. Это зарегистрирует webhook, `callback_query` и команды бота.
+6. Напишите боту `/style` и выберите оформление кнопкой. Открытый оверлей подхватит выбор автоматически примерно за две секунды.
+7. Добавьте `https://YOUR-SERVICE.onrender.com/overlay` в OBS как Browser Source. Рекомендуемый размер — `520 × 120`.
 
-The bot explicitly subscribes to `chat_member` updates. Existing subscribers are not available retroactively; the overlay starts tracking after the webhook is connected.
+Telegram не отдаёт старый список подписчиков: учёт начинается после подключения webhook.
 
-## Storage
+## Переменные окружения
 
-Local development uses D1. Render uses PostgreSQL when `DATABASE_URL` is set. Without either backend, the app falls back to in-memory storage for previews only.
+| Переменная | Назначение |
+| --- | --- |
+| `BOT_TOKEN` | токен от `@BotFather` |
+| `TELEGRAM_CHANNEL_ID` | ID канала/супергруппы, обычно начинается с `-100` |
+| `TELEGRAM_WEBHOOK_SECRET` | секрет проверки webhook |
+| `ADMIN_KEY` | ключ для кнопок административной панели |
+| `ADMIN_CHAT_ID` | владелец выбора стиля и получатель уведомлений |
+| `PUBLIC_URL` | необязательный публичный URL сервиса |
+| `DATABASE_URL` | PostgreSQL на Render |
+| `SUBSCRIBER_SOURCE` | `channel` для канала или `bot` для первого `/start` |
+
+## Хранилище
+
+Локальная разработка использует D1. На Render используется PostgreSQL, когда задан `DATABASE_URL`. Если оба хранилища недоступны, для предпросмотра включается временное хранилище в памяти.

@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SubscriberCard } from "./subscriber-card";
-import { DEMO_SUBSCRIBER, type Subscriber } from "./types";
+import { DEMO_SUBSCRIBER, type OverlaySettings, type OverlayStyle, type Subscriber } from "./types";
 
-type Snapshot = { latest: Subscriber | null; events: Subscriber[] };
+type Snapshot = { latest: Subscriber | null; events: Subscriber[]; settings: OverlaySettings };
 
 function playGentleChime() {
   if (typeof window === "undefined" || !new URLSearchParams(window.location.search).has("sound")) return;
@@ -30,20 +30,16 @@ function playGentleChime() {
   }
 }
 
-export function Overlay() {
+export function Overlay({ preview }: { preview: boolean }) {
   const [subscriber, setSubscriber] = useState<Subscriber>(DEMO_SUBSCRIBER);
   const [phase, setPhase] = useState<"idle" | "exit" | "enter">("idle");
   const [celebrating, setCelebrating] = useState(false);
   const [queue, setQueue] = useState<Subscriber[]>([]);
-  const [preview, setPreview] = useState(false);
+  const [style, setStyle] = useState<OverlayStyle>("graphite");
   const cursor = useRef(0);
   const initialized = useRef(false);
   const animating = useRef(false);
   const animationTimers = useRef<Array<ReturnType<typeof setTimeout>>>([]);
-
-  useEffect(() => {
-    setPreview(new URLSearchParams(window.location.search).has("preview"));
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,6 +50,7 @@ export function Overlay() {
         const response = await fetch(`/api/subscribers?after=${cursor.current}`, { cache: "no-store" });
         if (response.ok) {
           const data = (await response.json()) as Snapshot;
+          setStyle(data.settings.style);
           if (!initialized.current) {
             initialized.current = true;
             if (data.latest) setSubscriber(data.latest);
@@ -104,7 +101,7 @@ export function Overlay() {
 
   return (
     <main className={`overlay-page ${preview ? "is-preview" : ""}`}>
-      <SubscriberCard subscriber={subscriber} phase={phase} celebrating={celebrating} />
+      <SubscriberCard subscriber={subscriber} phase={phase} celebrating={celebrating} style={style} />
     </main>
   );
 }

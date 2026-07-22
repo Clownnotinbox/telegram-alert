@@ -14,3 +14,10 @@ export const subscriberEvents = sqliteTable(
   },
   (table) => [uniqueIndex("subscriber_events_event_key_idx").on(table.eventKey)],
 );
+
+export const overlaySettings = sqliteTable("overlay_settings", {
+  id: integer("id").primaryKey(),
+  style: text("style").notNull(),
+  version: integer("version").notNull().default(1),
+  updatedAt: text("updated_at").notNull(),
+});

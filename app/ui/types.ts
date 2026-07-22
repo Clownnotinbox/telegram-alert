@@ -8,6 +8,14 @@ export type Subscriber = {
   source: string;
 };
 
+export type OverlayStyle = "graphite" | "paper" | "mono";
+
+export type OverlaySettings = {
+  style: OverlayStyle;
+  version: number;
+  updatedAt: string;
+};
+
 export const DEMO_SUBSCRIBER: Subscriber = {
   sequence: 0,
   id: "demo",

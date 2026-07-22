@@ -17,6 +17,8 @@ services:
         generateValue: true
       - key: ADMIN_KEY
         generateValue: true
+      - key: ADMIN_CHAT_ID
+        sync: false
       - key: SUBSCRIBER_SOURCE
         value: channel
       - key: DATABASE_URL

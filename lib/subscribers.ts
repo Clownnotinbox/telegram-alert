@@ -1,4 +1,20 @@
 import { runtimeEnv } from "./runtime-env";
+import type { Pool, QueryResultRow } from "pg";
+
+export const OVERLAY_STYLES = ["graphite", "paper", "mono"] as const;
+export type OverlayStyle = (typeof OVERLAY_STYLES)[number];
+
+export type OverlaySettings = {
+  style: OverlayStyle;
+  version: number;
+  updatedAt: string;
+};
+
+export const DEFAULT_OVERLAY_SETTINGS: OverlaySettings = {
+  style: "graphite",
+  version: 0,
+  updatedAt: new Date(0).toISOString(),
+};
 
 export type SubscriberRecord = {
   sequence: number;
@@ -12,7 +28,7 @@ export type SubscriberRecord = {
 
 export type NewSubscriber = Omit<SubscriberRecord, "sequence"> & { eventKey: string };
 
-type Row = {
+type Row = QueryResultRow & {
   sequence: number | string;
   external_id: string;
   display_name: string;
@@ -20,6 +36,12 @@ type Row = {
   avatar_url: string | null;
   joined_at: string;
   source: string;
+};
+
+type SettingsRow = QueryResultRow & {
+  style: string;
+  version: number | string;
+  updated_at: string;
 };
 
 type D1Statement = {
@@ -36,9 +58,22 @@ type D1DatabaseLike = {
 
 const memory = globalThis as typeof globalThis & {
   __subscriberEvents?: Array<SubscriberRecord & { eventKey: string }>;
-  __pgPool?: { query: (text: string, values?: unknown[]) => Promise<{ rows: Row[] }> };
+  __overlaySettings?: OverlaySettings;
+  __pgPool?: Pool;
   __pgReady?: Promise<void>;
 };
+
+export function isOverlayStyle(value: unknown): value is OverlayStyle {
+  return typeof value === "string" && OVERLAY_STYLES.includes(value as OverlayStyle);
+}
+
+function mapSettingsRow(row: SettingsRow): OverlaySettings {
+  return {
+    style: isOverlayStyle(row.style) ? row.style : DEFAULT_OVERLAY_SETTINGS.style,
+    version: Number(row.version),
+    updatedAt: new Date(row.updated_at).toISOString(),
+  };
+}
 
 function mapRow(row: Row): SubscriberRecord {
   return {
@@ -63,18 +98,28 @@ async function postgresPool() {
       max: 3,
     });
   }
-  memory.__pgReady ??= memory.__pgPool.query(`
-    CREATE TABLE IF NOT EXISTS subscriber_events (
-      sequence BIGSERIAL PRIMARY KEY,
-      event_key TEXT NOT NULL UNIQUE,
-      external_id TEXT NOT NULL,
-      display_name TEXT NOT NULL,
-      username TEXT,
-      avatar_url TEXT,
-      joined_at TIMESTAMPTZ NOT NULL,
-      source TEXT NOT NULL
-    )
-  `).then(() => undefined);
+  memory.__pgReady ??= (async () => {
+    await memory.__pgPool!.query(`
+      CREATE TABLE IF NOT EXISTS subscriber_events (
+        sequence BIGSERIAL PRIMARY KEY,
+        event_key TEXT NOT NULL UNIQUE,
+        external_id TEXT NOT NULL,
+        display_name TEXT NOT NULL,
+        username TEXT,
+        avatar_url TEXT,
+        joined_at TIMESTAMPTZ NOT NULL,
+        source TEXT NOT NULL
+      )
+    `);
+    await memory.__pgPool!.query(`
+      CREATE TABLE IF NOT EXISTS overlay_settings (
+        id SMALLINT PRIMARY KEY CHECK (id = 1),
+        style TEXT NOT NULL,
+        version BIGINT NOT NULL DEFAULT 1,
+        updated_at TIMESTAMPTZ NOT NULL
+      )
+    `);
+  })();
   await memory.__pgReady;
   return memory.__pgPool;
 }
@@ -96,6 +141,12 @@ async function d1Database() {
         source TEXT NOT NULL
       )`),
       db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS subscriber_events_event_key_idx ON subscriber_events(event_key)"),
+      db.prepare(`CREATE TABLE IF NOT EXISTS overlay_settings (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        style TEXT NOT NULL,
+        version INTEGER NOT NULL DEFAULT 1,
+        updated_at TEXT NOT NULL
+      )`),
     ]);
     return db;
   } catch {
@@ -146,25 +197,83 @@ export async function recordSubscriber(input: NewSubscriber): Promise<Subscriber
 export async function subscriberSnapshot(after: number) {
   const pool = await postgresPool();
   if (pool) {
-    const [latestResult, eventsResult] = await Promise.all([
-      pool.query("SELECT sequence, external_id, display_name, username, avatar_url, joined_at, source FROM subscriber_events ORDER BY sequence DESC LIMIT 1"),
-      pool.query("SELECT sequence, external_id, display_name, username, avatar_url, joined_at, source FROM subscriber_events WHERE sequence > $1 ORDER BY sequence ASC LIMIT 25", [after]),
+    const [latestResult, eventsResult, settings] = await Promise.all([
+      pool.query<Row>("SELECT sequence, external_id, display_name, username, avatar_url, joined_at, source FROM subscriber_events ORDER BY sequence DESC LIMIT 1"),
+      pool.query<Row>("SELECT sequence, external_id, display_name, username, avatar_url, joined_at, source FROM subscriber_events WHERE sequence > $1 ORDER BY sequence ASC LIMIT 25", [after]),
+      getOverlaySettings(),
     ]);
-    return { latest: latestResult.rows[0] ? mapRow(latestResult.rows[0]) : null, events: eventsResult.rows.map(mapRow) };
+    return { latest: latestResult.rows[0] ? mapRow(latestResult.rows[0]) : null, events: eventsResult.rows.map(mapRow), settings };
   }
 
   const db = await d1Database();
   if (db) {
-    const [latest, events] = await Promise.all([
+    const [latest, events, settings] = await Promise.all([
       db.prepare("SELECT sequence, external_id, display_name, username, avatar_url, joined_at, source FROM subscriber_events ORDER BY sequence DESC LIMIT 1").first<Row>(),
       db.prepare("SELECT sequence, external_id, display_name, username, avatar_url, joined_at, source FROM subscriber_events WHERE sequence > ? ORDER BY sequence ASC LIMIT 25").bind(after).all<Row>(),
+      getOverlaySettings(),
     ]);
-    return { latest: latest ? mapRow(latest) : null, events: (events.results ?? []).map(mapRow) };
+    return { latest: latest ? mapRow(latest) : null, events: (events.results ?? []).map(mapRow), settings };
   }
 
   const store = memoryStore();
   return {
     latest: store.at(-1) ?? null,
     events: store.filter((event) => event.sequence > after).slice(0, 25),
+    settings: await getOverlaySettings(),
   };
+}
+
+export async function getOverlaySettings(): Promise<OverlaySettings> {
+  const pool = await postgresPool();
+  if (pool) {
+    const result = await pool.query<SettingsRow>("SELECT style, version, updated_at FROM overlay_settings WHERE id = 1");
+    return result.rows[0] ? mapSettingsRow(result.rows[0]) : DEFAULT_OVERLAY_SETTINGS;
+  }
+
+  const db = await d1Database();
+  if (db) {
+    const row = await db.prepare("SELECT style, version, updated_at FROM overlay_settings WHERE id = 1").first<SettingsRow>();
+    return row ? mapSettingsRow(row) : DEFAULT_OVERLAY_SETTINGS;
+  }
+
+  return memory.__overlaySettings ?? DEFAULT_OVERLAY_SETTINGS;
+}
+
+export async function setOverlayStyle(style: OverlayStyle): Promise<OverlaySettings> {
+  const updatedAt = new Date().toISOString();
+  const pool = await postgresPool();
+  if (pool) {
+    const result = await pool.query<SettingsRow>(
+      `INSERT INTO overlay_settings (id, style, version, updated_at)
+       VALUES (1, $1, 1, $2)
+       ON CONFLICT (id) DO UPDATE
+       SET style = EXCLUDED.style, version = overlay_settings.version + 1, updated_at = EXCLUDED.updated_at
+       RETURNING style, version, updated_at`,
+      [style, updatedAt],
+    );
+    return mapSettingsRow(result.rows[0]);
+  }
+
+  const db = await d1Database();
+  if (db) {
+    await db.prepare(
+      `INSERT INTO overlay_settings (id, style, version, updated_at)
+       VALUES (1, ?, 1, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         style = excluded.style,
+         version = overlay_settings.version + 1,
+         updated_at = excluded.updated_at`,
+    ).bind(style, updatedAt).run();
+    const row = await db.prepare("SELECT style, version, updated_at FROM overlay_settings WHERE id = 1").first<SettingsRow>();
+    if (!row) throw new Error("Overlay settings were not saved");
+    return mapSettingsRow(row);
+  }
+
+  const next = {
+    style,
+    version: (memory.__overlaySettings?.version ?? 0) + 1,
+    updatedAt,
+  };
+  memory.__overlaySettings = next;
+  return next;
 }
