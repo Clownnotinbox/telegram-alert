@@ -47,21 +47,7 @@ const STYLE_LABELS: Record<OverlayStyle, string> = {
   mono: "Только текст",
 };
 
-const CHANNEL_ADMIN_RIGHTS = {
-  is_anonymous: false,
-  can_manage_chat: true,
-  can_delete_messages: false,
-  can_manage_video_chats: false,
-  can_restrict_members: false,
-  can_promote_members: false,
-  can_change_info: false,
-  can_invite_users: true,
-  can_post_messages: false,
-  can_edit_messages: false,
-  can_post_stories: false,
-  can_edit_stories: false,
-  can_delete_stories: false,
-};
+const BOT_USERNAME = "xedat1va_bot";
 
 function isMember(member: TelegramMember) {
   return ["creator", "administrator", "member"].includes(member.status)
@@ -155,39 +141,30 @@ function promptName(user?: TelegramUser) {
 
 async function sendConnectPrompt(chatId: number | string, user?: TelegramUser) {
   const name = promptName(user);
-  await telegramCall("sendMessage", {
+  const text = `<b>${escapeHtml(name)}, небольшой технический ритуал:</b> нажмите кнопку и выберите группу. Telegram откроет список чатов, куда вы можете добавить бота. Для канала есть отдельная кнопка.`;
+  const message = await telegramCall<{ message_id: number }>("sendMessage", {
     chat_id: chatId,
-    text: `<b>${escapeHtml(name)}, небольшой технический ритуал:</b> нажмите большую кнопку снизу и выберите группу. Telegram сам добавит бота администратором с минимальными правами. Если нужен именно канал — для него есть отдельная кнопка.`,
+    text,
+    parse_mode: "HTML",
+    reply_markup: { remove_keyboard: true },
+  });
+  if (!message) return;
+  await telegramCall("editMessageText", {
+    chat_id: chatId,
+    message_id: message.message_id,
+    text,
     parse_mode: "HTML",
     reply_markup: {
-      keyboard: [
+      inline_keyboard: [
         [{
           text: `👉 Нажимать сюда, ${name}`,
-          request_chat: {
-            request_id: 73001,
-            chat_is_channel: false,
-            user_administrator_rights: CHANNEL_ADMIN_RIGHTS,
-            bot_administrator_rights: CHANNEL_ADMIN_RIGHTS,
-            request_title: true,
-            request_username: true,
-          },
+          url: `https://t.me/${BOT_USERNAME}?startgroup=obs&admin=manage_chat+invite_users`,
         }],
         [{
           text: "📣 Или подключить Telegram-канал",
-          request_chat: {
-            request_id: 73002,
-            chat_is_channel: true,
-            user_administrator_rights: CHANNEL_ADMIN_RIGHTS,
-            bot_administrator_rights: CHANNEL_ADMIN_RIGHTS,
-            request_title: true,
-            request_username: true,
-          },
+          url: `https://t.me/${BOT_USERNAME}?startchannel=obs&admin=manage_chat+invite_users`,
         }],
       ],
-      resize_keyboard: true,
-      is_persistent: true,
-      one_time_keyboard: false,
-      input_field_placeholder: "Выберите группу или канал",
     },
   });
 }
@@ -195,11 +172,6 @@ async function sendConnectPrompt(chatId: number | string, user?: TelegramUser) {
 async function sendHome(chatId: number, owner: TelegramUser, baseUrl: string) {
   const installations = await listInstallationsByOwner(String(owner.id));
   if (!installations.length) {
-    await telegramCall("sendMessage", {
-      chat_id: chatId,
-      text: "Telegram Alert готов. Подключение занимает меньше минуты: выберите группу или канал, скопируйте ссылку в OBS и нажмите тест.",
-      reply_markup: { remove_keyboard: true },
-    });
     await sendConnectPrompt(chatId, owner);
     return;
   }
@@ -414,7 +386,7 @@ export async function POST(request: Request) {
   if (message?.text?.startsWith("/help")) {
     await telegramCall("sendMessage", {
       chat_id: message.chat.id,
-      text: "1. Откройте /panel\n2. Нажмите большую кнопку снизу\n3. Выберите группу или канал\n4. Скопируйте OBS-ссылку\n5. Добавьте её как Browser Source 520 × 120\n\nВсё остальное бот сделает сам.",
+      text: "1. Откройте /panel\n2. Нажмите кнопку выбора группы или канала\n3. Выберите нужный чат\n4. Скопируйте OBS-ссылку\n5. Добавьте её как Browser Source 520 × 120\n\nВсё остальное бот сделает сам.",
     });
     return Response.json({ ok: true });
   }
@@ -431,7 +403,7 @@ export async function POST(request: Request) {
       if (!result.ownershipConflict && result.created) {
         await telegramCall("sendMessage", {
           chat_id: ownMembership.from.id,
-          text: `Канал «${result.installation.channelTitle}» обнаружен. Откройте /panel, чтобы получить OBS-ссылку.`,
+          text: `Чат «${result.installation.channelTitle}» подключён. Откройте /panel, чтобы получить OBS-ссылку.`,
         }).catch(() => null);
       }
       return Response.json({ ok: true, installation: result.installation, conflict: result.ownershipConflict });
@@ -441,7 +413,7 @@ export async function POST(request: Request) {
       if (isMember(ownMembership.new_chat_member)) {
         await telegramCall("sendMessage", {
           chat_id: existing.ownerChatId,
-          text: `Оверлей «${existing.channelTitle}» остановлен: боту нужны права администратора канала. Подключите канал заново через /panel.`,
+          text: `Оверлей «${existing.channelTitle}» остановлен: боту нужны права администратора чата. Подключите его заново через /panel.`,
         }).catch(() => null);
       }
     }

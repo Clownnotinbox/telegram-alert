@@ -37,6 +37,46 @@ test("renders the OBS overlay", async () => {
   assert.match(html, /data-style="graphite"/);
 });
 
+test("start sends one visible prompt with working group and channel links", async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  process.env.BOT_TOKEN = "test-token";
+  globalThis.fetch = async (input, init) => {
+    const url = String(input);
+    if (!url.startsWith("https://api.telegram.org/")) return originalFetch(input, init);
+    const method = new URL(url).pathname.split("/").at(-1);
+    const body = JSON.parse(init?.body || "{}");
+    calls.push({ method, body });
+    return Response.json({ ok: true, result: method === "sendMessage" ? { message_id: 901 } : true });
+  };
+
+  try {
+    const response = await request("/api/telegram/webhook", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        update_id: 41,
+        message: {
+          message_id: 4,
+          text: "/start",
+          chat: { id: 101, type: "private" },
+          from: { id: 101, first_name: "Дарина" },
+        },
+      }),
+    });
+    assert.equal(response.status, 200);
+    assert.equal(calls.filter((call) => call.method === "sendMessage").length, 1);
+    const edit = calls.find((call) => call.method === "editMessageText");
+    assert.ok(edit);
+    assert.match(edit.body.reply_markup.inline_keyboard[0][0].text, /Дарина/);
+    assert.match(edit.body.reply_markup.inline_keyboard[0][0].url, /startgroup=obs/);
+    assert.match(edit.body.reply_markup.inline_keyboard[1][0].url, /startchannel=obs/);
+  } finally {
+    globalThis.fetch = originalFetch;
+    delete process.env.BOT_TOKEN;
+  }
+});
+
 test("self-service flow creates a private overlay, changes style and sends a test", async () => {
   const connected = await request("/api/telegram/webhook", {
     method: "POST",
