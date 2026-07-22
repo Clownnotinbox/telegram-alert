@@ -142,31 +142,29 @@ function promptName(user?: TelegramUser) {
 async function sendConnectPrompt(chatId: number | string, user?: TelegramUser) {
   const name = promptName(user);
   const text = `<b>${escapeHtml(name)}, небольшой технический ритуал:</b> нажмите кнопку и выберите группу. Telegram откроет список чатов, куда вы можете добавить бота. Для канала есть отдельная кнопка.`;
-  const message = await telegramCall<{ message_id: number }>("sendMessage", {
-    chat_id: chatId,
-    text,
-    parse_mode: "HTML",
-    reply_markup: { remove_keyboard: true },
-  });
-  if (!message) return;
-  await telegramCall("editMessageText", {
-    chat_id: chatId,
-    message_id: message.message_id,
-    text,
-    parse_mode: "HTML",
-    reply_markup: {
-      inline_keyboard: [
-        [{
-          text: `👉 Нажимать сюда, ${name}`,
-          url: `https://t.me/${BOT_USERNAME}?startgroup=obs&admin=manage_chat+invite_users`,
-        }],
-        [{
-          text: "📣 Или подключить Telegram-канал",
-          url: `https://t.me/${BOT_USERNAME}?startchannel=obs&admin=manage_chat+invite_users`,
-        }],
-      ],
-    },
-  });
+  const groupUrl = `https://t.me/${BOT_USERNAME}?startgroup=obs&admin=manage_chat+invite_users`;
+  const channelUrl = `https://t.me/${BOT_USERNAME}?startchannel=obs&admin=manage_chat+invite_users`;
+  try {
+    await telegramCall("sendMessage", {
+      chat_id: chatId,
+      text,
+      parse_mode: "HTML",
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: `👉 Нажимать сюда, ${name}`, url: groupUrl }],
+          [{ text: "📣 Или подключить Telegram-канал", url: channelUrl }],
+        ],
+      },
+    });
+  } catch (error) {
+    console.error("Telegram onboarding buttons failed", error);
+    await telegramCall("sendMessage", {
+      chat_id: chatId,
+      text: `${text}\n\n<a href="${groupUrl}">Выбрать группу</a> · <a href="${channelUrl}">Выбрать канал</a>`,
+      parse_mode: "HTML",
+      link_preview_options: { is_disabled: true },
+    }).catch((fallbackError) => console.error("Telegram onboarding fallback failed", fallbackError));
+  }
 }
 
 async function sendHome(chatId: number, owner: TelegramUser, baseUrl: string) {

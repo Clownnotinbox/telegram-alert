@@ -37,7 +37,7 @@ test("renders the OBS overlay", async () => {
   assert.match(html, /data-style="graphite"/);
 });
 
-test("start sends one visible prompt with working group and channel links", async () => {
+test("start sends one message with working group and channel buttons", async () => {
   const originalFetch = globalThis.fetch;
   const calls = [];
   process.env.BOT_TOKEN = "test-token";
@@ -66,11 +66,11 @@ test("start sends one visible prompt with working group and channel links", asyn
     });
     assert.equal(response.status, 200);
     assert.equal(calls.filter((call) => call.method === "sendMessage").length, 1);
-    const edit = calls.find((call) => call.method === "editMessageText");
-    assert.ok(edit);
-    assert.match(edit.body.reply_markup.inline_keyboard[0][0].text, /Дарина/);
-    assert.match(edit.body.reply_markup.inline_keyboard[0][0].url, /startgroup=obs/);
-    assert.match(edit.body.reply_markup.inline_keyboard[1][0].url, /startchannel=obs/);
+    assert.equal(calls.filter((call) => call.method === "editMessageText").length, 0);
+    const prompt = calls.find((call) => call.method === "sendMessage");
+    assert.match(prompt.body.reply_markup.inline_keyboard[0][0].text, /Дарина/);
+    assert.match(prompt.body.reply_markup.inline_keyboard[0][0].url, /startgroup=obs/);
+    assert.match(prompt.body.reply_markup.inline_keyboard[1][0].url, /startchannel=obs/);
   } finally {
     globalThis.fetch = originalFetch;
     delete process.env.BOT_TOKEN;
