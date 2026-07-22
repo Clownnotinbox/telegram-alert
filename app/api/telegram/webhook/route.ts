@@ -1,4 +1,4 @@
-import { runtimeEnv } from "../../../../lib/runtime-env";
+import { normalizeTelegramWebhookSecret, runtimeEnv } from "../../../../lib/runtime-env";
 import {
   getInstallationByChannelId,
   getInstallationById,
@@ -232,7 +232,7 @@ async function registerChannel(
 }
 
 export async function POST(request: Request) {
-  const expectedSecret = await runtimeEnv("TELEGRAM_WEBHOOK_SECRET");
+  const expectedSecret = normalizeTelegramWebhookSecret(await runtimeEnv("TELEGRAM_WEBHOOK_SECRET"));
   if (expectedSecret && request.headers.get("x-telegram-bot-api-secret-token") !== expectedSecret) {
     return Response.json({ ok: false }, { status: 401 });
   }

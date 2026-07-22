@@ -11,6 +11,10 @@ export async function runtimeEnv(name: string) {
   }
 }
 
+export function normalizeTelegramWebhookSecret(value: string | undefined) {
+  return value?.replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 256);
+}
+
 export async function requireAdmin(request: Request) {
   const expected = await runtimeEnv("ADMIN_KEY");
   if (!expected && (await runtimeEnv("NODE_ENV")) !== "production") return true;

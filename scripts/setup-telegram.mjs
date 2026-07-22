@@ -1,5 +1,7 @@
 const token = process.env.BOT_TOKEN;
-const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
+const secret = process.env.TELEGRAM_WEBHOOK_SECRET
+  ?.replace(/[^A-Za-z0-9_-]/g, "_")
+  .slice(0, 256);
 const baseUrl = (process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || "").replace(/\/$/, "");
 
 if (!token || !secret || !baseUrl) {

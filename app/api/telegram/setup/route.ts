@@ -1,9 +1,9 @@
-import { requireAdmin, runtimeEnv } from "../../../../lib/runtime-env";
+import { normalizeTelegramWebhookSecret, requireAdmin, runtimeEnv } from "../../../../lib/runtime-env";
 
 export async function POST(request: Request) {
   if (!(await requireAdmin(request))) return Response.json({ error: "Неверный ADMIN_KEY" }, { status: 401 });
   const token = await runtimeEnv("BOT_TOKEN");
-  const secret = await runtimeEnv("TELEGRAM_WEBHOOK_SECRET");
+  const secret = normalizeTelegramWebhookSecret(await runtimeEnv("TELEGRAM_WEBHOOK_SECRET"));
   if (!token) return Response.json({ error: "В Render не задан BOT_TOKEN" }, { status: 400 });
   if (!secret) return Response.json({ error: "В Render не задан TELEGRAM_WEBHOOK_SECRET" }, { status: 400 });
 
