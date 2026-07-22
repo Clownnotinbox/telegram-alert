@@ -3,7 +3,7 @@ services:
     name: telegram-alert
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build
+    buildCommand: npm install && npm run build
     startCommand: npm start
     initialDeployHook: npm run telegram:setup
     healthCheckPath: /api/health
