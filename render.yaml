@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     buildCommand: npm install && npm run build
-    startCommand: npm run telegram:setup && npm start
+    startCommand: npm start
     initialDeployHook: npm run telegram:setup
     healthCheckPath: /api/health
     envVars:
