@@ -17,14 +17,14 @@ async function request(path, init = {}) {
   );
 }
 
-test("renders the Telegram Alert dashboard", async () => {
+test("renders the self-service Telegram Alert dashboard", async () => {
   const response = await request("/");
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /Telegram Alert/);
-  assert.match(html, /Текущий стиль/);
-  assert.match(html, /\/style/);
-  assert.match(html, /Подключить Telegram/);
+  assert.match(html, /Стример всё делает в Telegram/);
+  assert.match(html, /\/panel/);
+  assert.match(html, /Подключить канал/);
   assert.doesNotMatch(html, /codex-preview/);
 });
 
@@ -37,16 +37,35 @@ test("renders the OBS overlay", async () => {
   assert.match(html, /data-style="graphite"/);
 });
 
-test("changes the persisted overlay style from a Telegram button", async () => {
-  const callback = await request("/api/telegram/webhook", {
+test("self-service flow creates a private overlay, changes style and sends a test", async () => {
+  const connected = await request("/api/telegram/webhook", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       update_id: 42,
+      message: {
+        message_id: 5,
+        chat: { id: 101, type: "private" },
+        from: { id: 101, first_name: "Streamer" },
+        chat_shared: { request_id: 73001, chat_id: -100500, title: "Test channel", username: "test_channel" },
+      },
+    }),
+  });
+  assert.equal(connected.status, 200);
+  const installation = (await connected.json()).installation;
+  assert.equal(installation.ownerUserId, "101");
+  assert.equal(installation.channelId, "-100500");
+  assert.ok(installation.overlayKey.length >= 40);
+
+  const callback = await request("/api/telegram/webhook", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      update_id: 43,
       callback_query: {
         id: "callback-test",
         from: { id: 101 },
-        data: "style:paper",
+        data: `style:${installation.id}:paper`,
         message: { message_id: 7, chat: { id: 101 } },
       },
     }),
@@ -54,7 +73,38 @@ test("changes the persisted overlay style from a Telegram button", async () => {
   assert.equal(callback.status, 200);
   assert.equal((await callback.json()).settings.style, "paper");
 
-  const snapshot = await request("/api/subscribers?after=0", { headers: { accept: "application/json" } });
+  const forbidden = await request("/api/telegram/webhook", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      update_id: 45,
+      callback_query: { id: "wrong-owner", from: { id: 202 }, data: `style:${installation.id}:mono` },
+    }),
+  });
+  assert.equal(forbidden.status, 200);
+  assert.equal((await forbidden.json()).forbidden, true);
+
+  const testAlert = await request("/api/telegram/webhook", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      update_id: 44,
+      callback_query: { id: "test-alert", from: { id: 101 }, data: `test:${installation.id}` },
+    }),
+  });
+  assert.equal(testAlert.status, 200);
+  assert.equal((await testAlert.json()).event.installationId, installation.id);
+
+  const snapshot = await request(`/api/subscribers?after=0&key=${installation.overlayKey}`, {
+    headers: { accept: "application/json" },
+  });
   assert.equal(snapshot.status, 200);
-  assert.equal((await snapshot.json()).settings.style, "paper");
+  const snapshotBody = await snapshot.json();
+  assert.equal(snapshotBody.settings.style, "paper");
+  assert.equal(snapshotBody.latest.installationId, installation.id);
+
+  const privateSnapshot = await request("/api/subscribers?after=0&key=wrong-key", {
+    headers: { accept: "application/json" },
+  });
+  assert.equal(privateSnapshot.status, 404);
 });

@@ -5,22 +5,17 @@ services:
     plan: free
     buildCommand: npm ci && npm run build
     startCommand: npm start
+    initialDeployHook: npm run telegram:setup
     healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
         value: 24.14.0
       - key: BOT_TOKEN
         sync: false
-      - key: TELEGRAM_CHANNEL_ID
-        sync: false
       - key: TELEGRAM_WEBHOOK_SECRET
         generateValue: true
       - key: ADMIN_KEY
         generateValue: true
-      - key: ADMIN_CHAT_ID
-        sync: false
-      - key: SUBSCRIBER_SOURCE
-        value: channel
       - key: DATABASE_URL
         fromDatabase:
           name: telegram-alert-db

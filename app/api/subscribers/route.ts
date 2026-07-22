@@ -1,10 +1,16 @@
 import { requireAdmin } from "../../../lib/runtime-env";
-import { recordSubscriber, subscriberSnapshot } from "../../../lib/subscribers";
+import { getInstallationByOverlayKey, recordSubscriber, subscriberSnapshot } from "../../../lib/subscribers";
 
 export async function GET(request: Request) {
-  const afterValue = Number(new URL(request.url).searchParams.get("after") ?? 0);
+  const url = new URL(request.url);
+  const afterValue = Number(url.searchParams.get("after") ?? 0);
   const after = Number.isFinite(afterValue) && afterValue > 0 ? Math.floor(afterValue) : 0;
-  const snapshot = await subscriberSnapshot(after);
+  const overlayKey = url.searchParams.get("key");
+  const installation = overlayKey ? await getInstallationByOverlayKey(overlayKey) : null;
+  if (overlayKey && (!installation || !installation.active)) {
+    return Response.json({ error: "Оверлей не найден или отключён" }, { status: 404 });
+  }
+  const snapshot = await subscriberSnapshot(after, installation?.id ?? null);
   return Response.json(snapshot, { headers: { "cache-control": "no-store, no-cache, must-revalidate" } });
 }
 

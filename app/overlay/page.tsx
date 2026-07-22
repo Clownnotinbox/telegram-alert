@@ -6,5 +6,6 @@ export default async function OverlayPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  return <Overlay preview={params.preview !== undefined} />;
+  const key = Array.isArray(params.key) ? params.key[0] : params.key;
+  return <Overlay preview={params.preview !== undefined} overlayKey={key ?? null} />;
 }

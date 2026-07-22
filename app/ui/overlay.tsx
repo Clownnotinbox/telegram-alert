@@ -30,7 +30,7 @@ function playGentleChime() {
   }
 }
 
-export function Overlay({ preview }: { preview: boolean }) {
+export function Overlay({ preview, overlayKey }: { preview: boolean; overlayKey: string | null }) {
   const [subscriber, setSubscriber] = useState<Subscriber>(DEMO_SUBSCRIBER);
   const [phase, setPhase] = useState<"idle" | "exit" | "enter">("idle");
   const [celebrating, setCelebrating] = useState(false);
@@ -47,7 +47,8 @@ export function Overlay({ preview }: { preview: boolean }) {
 
     const poll = async () => {
       try {
-        const response = await fetch(`/api/subscribers?after=${cursor.current}`, { cache: "no-store" });
+        const key = overlayKey ? `&key=${encodeURIComponent(overlayKey)}` : "";
+        const response = await fetch(`/api/subscribers?after=${cursor.current}${key}`, { cache: "no-store" });
         if (response.ok) {
           const data = (await response.json()) as Snapshot;
           setStyle(data.settings.style);
@@ -72,7 +73,7 @@ export function Overlay({ preview }: { preview: boolean }) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, []);
+  }, [overlayKey]);
 
   useEffect(() => {
     if (animating.current || queue.length === 0) return;

@@ -118,6 +118,25 @@ a { -webkit-tap-highlight-color: transparent; }
   line-height: 1.65;
 }
 
+.self-service-heading { max-width: 720px; }
+
+.self-service-heading > p:not(.eyebrow) {
+  max-width: 650px;
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.hero-button { margin-top: 22px; }
+
+.bot-pending {
+  display: inline-block;
+  margin-top: 22px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
 .workspace-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(280px, .72fr);
@@ -225,6 +244,60 @@ a { -webkit-tap-highlight-color: transparent; }
 }
 
 .text-link:hover { color: var(--ink); }
+
+.preview-note {
+  max-width: 300px;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.bot-flow {
+  display: grid;
+  gap: 0;
+  margin: 0 0 20px;
+  padding: 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+
+.bot-flow li {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.bot-flow li > span {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.bot-flow p {
+  margin: 1px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.bot-flow strong { color: var(--ink); font-weight: 620; }
+
+.privacy-note {
+  margin: 14px 1px 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
 
 .style-list {
   display: grid;
@@ -577,6 +650,7 @@ a { -webkit-tap-highlight-color: transparent; }
   .page-heading { padding-top: 42px; }
   .preview-window { min-height: 280px; }
   .preview-actions { align-items: stretch; flex-direction: column; }
+  .preview-note { margin: 2px 0 0; text-align: left; }
   .text-link { margin: 4px 0 0; text-align: center; }
   .subscriber-card { grid-template-columns: 52px minmax(0,1fr); padding: 14px; }
   .avatar-shell,
