@@ -17,7 +17,7 @@ Open `http://localhost:3000`. The test button works without Telegram credentials
 ## Telegram setup
 
 1. Create a bot with `@BotFather` and add it to the channel as an administrator.
-2. Add `BOT_TOKEN`, `TELEGRAM_CHANNEL_ID`, `TELEGRAM_WEBHOOK_SECRET`, `ADMIN_KEY` and `PUBLIC_URL` to Render.
+2. Add `BOT_TOKEN` and `TELEGRAM_CHANNEL_ID` to Render. The included Blueprint generates `TELEGRAM_WEBHOOK_SECRET` and `ADMIN_KEY` automatically; `PUBLIC_URL` is optional.
 3. Deploy the service.
 4. Open the dashboard, enter `ADMIN_KEY`, and click **Подключить webhook**.
 5. Add `https://YOUR-SERVICE.onrender.com/overlay` to OBS as a Browser Source.
