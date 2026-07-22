@@ -24,7 +24,7 @@ test("renders the self-service Telegram Alert dashboard", async () => {
   assert.match(html, /Telegram Alert/);
   assert.match(html, /Стример всё делает в Telegram/);
   assert.match(html, /\/panel/);
-  assert.match(html, /Подключить канал/);
+  assert.match(html, /группу или канал/);
   assert.doesNotMatch(html, /codex-preview/);
 });
 

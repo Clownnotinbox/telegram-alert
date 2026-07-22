@@ -133,7 +133,7 @@ function installationKeyboard(installation: StreamerInstallation, baseUrl: strin
         { text: "Скопировать OBS-ссылку", copy_text: { text: overlayUrl(baseUrl, installation) } },
       ],
       [
-        { text: "Подключить ещё канал", callback_data: "connect" },
+        { text: "Подключить ещё группу или канал", callback_data: "connect" },
         { text: "Отключить", callback_data: `disable:${installation.id}` },
       ],
     ],
@@ -149,52 +149,71 @@ async function sendInstallationPanel(chatId: number | string, installation: Stre
   });
 }
 
-async function sendConnectPrompt(chatId: number | string) {
+function promptName(user?: TelegramUser) {
+  return user?.first_name?.trim().slice(0, 20) || "стример";
+}
+
+async function sendConnectPrompt(chatId: number | string, user?: TelegramUser) {
+  const name = promptName(user);
   await telegramCall("sendMessage", {
     chat_id: chatId,
-    text: "Нажмите кнопку и выберите свой канал. Telegram сам добавит бота администратором с минимальными правами.",
+    text: `<b>${escapeHtml(name)}, небольшой технический ритуал:</b> нажмите большую кнопку снизу и выберите группу. Telegram сам добавит бота администратором с минимальными правами. Если нужен именно канал — для него есть отдельная кнопка.`,
+    parse_mode: "HTML",
     reply_markup: {
-      keyboard: [[{
-        text: "Подключить канал",
-        request_chat: {
-          request_id: 73001,
-          chat_is_channel: true,
-          chat_is_created: true,
-          user_administrator_rights: CHANNEL_ADMIN_RIGHTS,
-          bot_administrator_rights: CHANNEL_ADMIN_RIGHTS,
-          request_title: true,
-          request_username: true,
-        },
-      }]],
+      keyboard: [
+        [{
+          text: `👉 Нажимать сюда, ${name}`,
+          request_chat: {
+            request_id: 73001,
+            chat_is_channel: false,
+            user_administrator_rights: CHANNEL_ADMIN_RIGHTS,
+            bot_administrator_rights: CHANNEL_ADMIN_RIGHTS,
+            request_title: true,
+            request_username: true,
+          },
+        }],
+        [{
+          text: "📣 Или подключить Telegram-канал",
+          request_chat: {
+            request_id: 73002,
+            chat_is_channel: true,
+            user_administrator_rights: CHANNEL_ADMIN_RIGHTS,
+            bot_administrator_rights: CHANNEL_ADMIN_RIGHTS,
+            request_title: true,
+            request_username: true,
+          },
+        }],
+      ],
       resize_keyboard: true,
-      one_time_keyboard: true,
-      input_field_placeholder: "Выберите канал",
+      is_persistent: true,
+      one_time_keyboard: false,
+      input_field_placeholder: "Выберите группу или канал",
     },
   });
 }
 
-async function sendHome(chatId: number, ownerUserId: string, baseUrl: string) {
-  const installations = await listInstallationsByOwner(ownerUserId);
+async function sendHome(chatId: number, owner: TelegramUser, baseUrl: string) {
+  const installations = await listInstallationsByOwner(String(owner.id));
   if (!installations.length) {
     await telegramCall("sendMessage", {
       chat_id: chatId,
-      text: "Telegram Alert готов. Подключение занимает меньше минуты: выберите канал, скопируйте ссылку в OBS и нажмите тест.",
+      text: "Telegram Alert готов. Подключение занимает меньше минуты: выберите группу или канал, скопируйте ссылку в OBS и нажмите тест.",
       reply_markup: { remove_keyboard: true },
     });
-    await sendConnectPrompt(chatId);
+    await sendConnectPrompt(chatId, owner);
     return;
   }
 
   await telegramCall("sendMessage", {
     chat_id: chatId,
-    text: "Ваши оверлеи. Выберите канал или подключите новый.",
+    text: "Ваши оверлеи. Выберите чат или подключите новый.",
     reply_markup: {
       inline_keyboard: [
         ...installations.map((installation) => [{
           text: `${installation.active ? "●" : "○"} ${installation.channelTitle}`,
           callback_data: `channel:${installation.id}`,
         }]),
-        [{ text: "Подключить ещё канал", callback_data: "connect" }],
+        [{ text: "Подключить ещё группу или канал", callback_data: "connect" }],
       ],
     },
   });
@@ -212,7 +231,7 @@ async function ownedInstallation(id: string, ownerUserId: string) {
 async function answerUnauthorized(callbackId: string) {
   await telegramCall("answerCallbackQuery", {
     callback_query_id: callbackId,
-    text: "Этот канал подключал другой пользователь",
+    text: "Этот чат подключал другой пользователь",
     show_alert: true,
   });
 }
@@ -243,7 +262,7 @@ export async function POST(request: Request) {
 
   if (callback?.data === "connect") {
     await telegramCall("answerCallbackQuery", { callback_query_id: callback.id });
-    await sendConnectPrompt(callback.from.id);
+    await sendConnectPrompt(callback.from.id, callback.from);
     return Response.json({ ok: true });
   }
 
@@ -349,14 +368,14 @@ export async function POST(request: Request) {
     }
     await setInstallationActive(installation.id, false);
     await telegramCall("leaveChat", { chat_id: installation.channelId }).catch(() => null);
-    await telegramCall("answerCallbackQuery", { callback_query_id: callback.id, text: "Канал отключён" });
+    await telegramCall("answerCallbackQuery", { callback_query_id: callback.id, text: "Чат отключён" });
     if (callback.message) {
       await telegramCall("editMessageText", {
         chat_id: callback.message.chat.id,
         message_id: callback.message.message_id,
         text: `<b>${escapeHtml(installation.channelTitle)}</b> отключён. Его OBS-ссылка больше не принимает события.`,
         parse_mode: "HTML",
-        reply_markup: { inline_keyboard: [[{ text: "Подключить канал", callback_data: "connect" }]] },
+        reply_markup: { inline_keyboard: [[{ text: "Подключить группу или канал", callback_data: "connect" }]] },
       });
     }
     return Response.json({ ok: true });
@@ -372,14 +391,14 @@ export async function POST(request: Request) {
     if (result.ownershipConflict) {
       await telegramCall("sendMessage", {
         chat_id: message.chat.id,
-        text: "Этот канал уже подключён другим пользователем. Сначала его нужно отключить в прежнем аккаунте.",
+        text: "Этот чат уже подключён другим пользователем. Сначала его нужно отключить в прежнем аккаунте.",
         reply_markup: { remove_keyboard: true },
       });
       return Response.json({ ok: true, conflict: true });
     }
     await telegramCall("sendMessage", {
       chat_id: message.chat.id,
-      text: "Канал подключён. Ни ID, ни ключи вводить не нужно.",
+      text: "Готово — группа или канал подключены. Ни ID, ни ключи вводить не нужно.",
       reply_markup: { remove_keyboard: true },
     });
     await sendInstallationPanel(message.chat.id, result.installation, baseUrl);
@@ -388,14 +407,14 @@ export async function POST(request: Request) {
 
   if (message?.text?.startsWith("/start") || message?.text?.startsWith("/panel") || message?.text?.startsWith("/style")) {
     const owner = message.from ?? { id: message.chat.id };
-    await sendHome(message.chat.id, String(owner.id), baseUrl);
+    await sendHome(message.chat.id, owner, baseUrl);
     return Response.json({ ok: true });
   }
 
   if (message?.text?.startsWith("/help")) {
     await telegramCall("sendMessage", {
       chat_id: message.chat.id,
-      text: "1. Откройте /panel\n2. Подключите канал\n3. Скопируйте OBS-ссылку\n4. Добавьте её как Browser Source 520 × 120\n\nВсё остальное бот сделает сам.",
+      text: "1. Откройте /panel\n2. Нажмите большую кнопку снизу\n3. Выберите группу или канал\n4. Скопируйте OBS-ссылку\n5. Добавьте её как Browser Source 520 × 120\n\nВсё остальное бот сделает сам.",
     });
     return Response.json({ ok: true });
   }

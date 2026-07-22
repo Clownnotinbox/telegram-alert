@@ -33,17 +33,35 @@ export async function POST(request: Request) {
     telegramMethod("setMyName", { name: "Telegram Alert" }),
     telegramMethod("setMyCommands", {
       commands: [
-        { command: "start", description: "Настроить оверлей" },
-        { command: "panel", description: "Мои каналы и OBS-ссылки" },
+        { command: "start", description: "Подключить группу или канал" },
+        { command: "panel", description: "Мои чаты и OBS-ссылки" },
         { command: "style", description: "Выбрать оформление" },
         { command: "help", description: "Короткая инструкция" },
       ],
     }),
     telegramMethod("setMyDescription", {
-      description: "Подключает Telegram-канал к OBS: показывает последнего подписчика и уведомляет о новых. Настройка полностью внутри бота.",
+      description: "Подключает Telegram-группу или канал к OBS и аккуратно показывает нового участника или подписчика в эфире. Выберите чат, получите личную Browser Source-ссылку, настройте стиль и запустите тест — всё прямо внутри бота.",
     }),
     telegramMethod("setMyShortDescription", {
-      short_description: "Уведомления о подписчиках Telegram в OBS",
+      short_description: "Новые участники групп и подписчики каналов — аккуратно в OBS",
+    }),
+    telegramMethod("setMyDefaultAdministratorRights", {
+      for_channels: false,
+      rights: {
+        is_anonymous: false,
+        can_manage_chat: true,
+        can_delete_messages: false,
+        can_manage_video_chats: false,
+        can_restrict_members: false,
+        can_promote_members: false,
+        can_change_info: false,
+        can_invite_users: true,
+        can_post_messages: false,
+        can_edit_messages: false,
+        can_post_stories: false,
+        can_edit_stories: false,
+        can_delete_stories: false,
+      },
     }),
     telegramMethod("setMyDefaultAdministratorRights", {
       for_channels: true,

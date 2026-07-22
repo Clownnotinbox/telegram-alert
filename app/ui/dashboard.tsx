@@ -52,7 +52,7 @@ export function Dashboard() {
         <section className="page-heading self-service-heading">
           <p className="eyebrow">Оверлей без ручной настройки</p>
           <h1>Стример всё делает в Telegram</h1>
-          <p>Выбирает канал, оформление и тестирует уведомление. Бот сам выдаёт персональную OBS-ссылку — без ID, ключей и переписки с владельцем сервиса.</p>
+          <p>Выбирает группу или канал, оформление и тестирует уведомление. Бот сам выдаёт персональную OBS-ссылку — без ID, ключей и переписки с владельцем сервиса.</p>
           {botUrl ? (
             <a className="button button-primary hero-button" href={botUrl} target="_blank" rel="noreferrer">
               Открыть @{bot.username}
@@ -89,8 +89,8 @@ export function Dashboard() {
             </div>
 
             <ol className="bot-flow">
-              <li><span>1</span><p><strong>Открыть бота</strong> и нажать «Подключить канал».</p></li>
-              <li><span>2</span><p><strong>Выбрать свой канал</strong> в системном окне Telegram.</p></li>
+              <li><span>1</span><p><strong>Открыть бота</strong> и нажать большую кнопку снизу.</p></li>
+              <li><span>2</span><p><strong>Выбрать свою группу или канал</strong> в системном окне Telegram.</p></li>
               <li><span>3</span><p><strong>Скопировать OBS-ссылку</strong> и нажать «Проверить».</p></li>
             </ol>
 
@@ -107,12 +107,12 @@ export function Dashboard() {
               <span>Панель стримера</span>
               <code>/panel</code>
             </div>
-            <p className="privacy-note">Каждый канал получает отдельную случайную ссылку. Управлять ею может только пользователь, который подключил канал.</p>
+            <p className="privacy-note">Каждый чат получает отдельную случайную ссылку. Управлять ею может только пользователь, который его подключил.</p>
           </aside>
         </section>
 
         <footer className="steps self-service-summary">
-          <div><span>01</span><p><strong>Без ID каналов</strong><br />Telegram передаёт всё автоматически.</p></div>
+          <div><span>01</span><p><strong>Без ID чатов</strong><br />Telegram передаёт всё автоматически.</p></div>
           <div><span>02</span><p><strong>Без доступа к Render</strong><br />Стример работает только с ботом.</p></div>
           <div><span>03</span><p><strong>Без перезапуска OBS</strong><br />Стиль и подписчик обновляются сами.</p></div>
         </footer>

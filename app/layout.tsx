@@ -8,7 +8,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const protocol = requestHeaders.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
   const metadataBase = new URL(`${protocol}://${host}`);
   const title = "Telegram Alert — self-service оверлей для OBS";
-  const description = "Стример сам подключает Telegram-канал, получает OBS-ссылку и выбирает оформление прямо в боте.";
+  const description = "Стример сам подключает Telegram-группу или канал, получает OBS-ссылку и выбирает оформление прямо в боте.";
 
   return {
     metadataBase,
