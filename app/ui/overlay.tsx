@@ -49,7 +49,7 @@ export function Overlay({ preview, overlayKey }: { preview: boolean; overlayKey:
   const [phase, setPhase] = useState<"idle" | "exit" | "enter">("idle");
   const [celebrating, setCelebrating] = useState(false);
   const [queue, setQueue] = useState<Subscriber[]>([]);
-  const [style, setStyle] = useState<OverlayStyle>("graphite");
+  const [style, setStyle] = useState<OverlayStyle>("anime");
   const cursor = useRef(0);
   const initialized = useRef(false);
   const animating = useRef(false);

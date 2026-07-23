@@ -5,10 +5,10 @@ import { useEffect, useState } from "react";
 import type { OverlayStyle } from "./types";
 
 const STYLE_NAMES: Record<OverlayStyle, string> = {
+  anime: "Аниме",
   graphite: "Графит",
   paper: "Светлый",
   mono: "Только текст",
-  anime: "Аниме",
 };
 
 type BotInfo = { ready: boolean; username?: string; name?: string };

@@ -48,11 +48,11 @@ export function SubscriberCard({
   const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
 
   const waiting = !subscriber;
-  const isTest = subscriber?.source === "telegram-test" || subscriber?.source === "test";
   const name = subscriber?.name ?? "Ждём нового подписчика";
   const meta = subscriber
-    ? isTest ? "Тестовое уведомление" : subscriber.username ? `@${subscriber.username}` : "Telegram"
+    ? subscriber.username ? `@${subscriber.username}` : "Новый участник Telegram"
     : "Появится здесь после вступления";
+  const waveSource = `/mascot-wave.gif?v=1&event=${subscriber?.sequence ?? 0}`;
 
   return (
     <div className="subscriber-wrap" data-style={style} data-waiting={waiting || undefined} data-testid="subscriber-design">
@@ -63,17 +63,13 @@ export function SubscriberCard({
         <span className="frame-corner frame-corner-br" aria-hidden="true" />
 
         <div className={`anime-mascot ${celebrating ? "is-celebrating" : ""}`} aria-hidden="true">
-          {/* Generated original mascot asset; no external image host is used. */}
-          <img src="/mascot-anime.png" alt="" />
+          {/* Both original mascot assets are generated locally; no external image host is used. */}
+          <img className="mascot-still" src="/mascot-anime.png" alt="" />
+          {celebrating && <img className="mascot-wave" src={waveSource} alt="" />}
           <span className="mascot-spark spark-one">✦</span>
           <span className="mascot-spark spark-two">✦</span>
           <span className="mascot-spark spark-three">·</span>
         </div>
-
-        <header className="subscriber-topline">
-          <span className="overlay-brand"><b>tg</b> telegram alert</span>
-          <span className="subscriber-state">{isTest ? "демо" : celebrating ? "только что" : waiting ? "готов" : "последний"}</span>
-        </header>
 
         <div className="subscriber-identity">
           <div className="avatar-shell" aria-hidden="true">
@@ -89,14 +85,24 @@ export function SubscriberCard({
           <div className="subscriber-copy">
             <div className="subscriber-label">
               <span className={`subscriber-indicator ${celebrating ? "is-live" : ""}`} />
-              {isTest ? "Проверка оформления" : celebrating ? "Новый подписчик" : waiting ? "Ожидаем событие" : "Последний подписчик"}
+              {celebrating ? "Новый подписчик" : waiting ? "Ожидаем подписчика" : "Последний подписчик"}
             </div>
             <h2 className="subscriber-name">{name}</h2>
             <div className="subscriber-meta">{meta}</div>
           </div>
         </div>
 
-        {community && (
+        {style === "anime" && community?.url && (
+          <footer className="anime-qr">
+            <QrMark value={community.url} />
+            <div>
+              <strong>Присоединяйся</strong>
+              <span>сканируй QR-код</span>
+            </div>
+          </footer>
+        )}
+
+        {style !== "anime" && community && (
           <footer className={`community-block ${community.url ? "has-qr" : ""}`}>
             <div className="community-copy">
               <span>Telegram-сообщество</span>

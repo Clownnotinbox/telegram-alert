@@ -47,7 +47,7 @@ export type NewSubscriber = Omit<SubscriberRecord, "sequence" | "installationId"
 };
 
 export const DEFAULT_OVERLAY_SETTINGS: OverlaySettings = {
-  style: "graphite",
+  style: "anime",
   version: 0,
   updatedAt: new Date(0).toISOString(),
 };
@@ -195,7 +195,7 @@ async function postgresPool() {
         channel_title TEXT NOT NULL,
         channel_username TEXT,
         overlay_key TEXT NOT NULL UNIQUE,
-        style TEXT NOT NULL DEFAULT 'graphite',
+        style TEXT NOT NULL DEFAULT 'anime',
         version BIGINT NOT NULL DEFAULT 1,
         active BOOLEAN NOT NULL DEFAULT TRUE,
         created_at TIMESTAMPTZ NOT NULL,
@@ -241,7 +241,7 @@ async function d1Database() {
           channel_title TEXT NOT NULL,
           channel_username TEXT,
           overlay_key TEXT NOT NULL UNIQUE,
-          style TEXT NOT NULL DEFAULT 'graphite',
+          style TEXT NOT NULL DEFAULT 'anime',
           version INTEGER NOT NULL DEFAULT 1,
           active INTEGER NOT NULL DEFAULT 1,
           created_at TEXT NOT NULL,
@@ -275,7 +275,7 @@ function newInstallation(input: InstallationInput): StreamerInstallation {
     id: crypto.randomUUID(),
     ...input,
     overlayKey: `${crypto.randomUUID().replaceAll("-", "")}${crypto.randomUUID().replaceAll("-", "").slice(0, 16)}`,
-    style: "graphite",
+    style: "anime",
     version: 1,
     active: true,
     createdAt: now,

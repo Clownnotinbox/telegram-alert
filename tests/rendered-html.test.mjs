@@ -35,7 +35,7 @@ test("renders the OBS overlay", async () => {
   const html = await response.text();
   assert.match(html, /Последний подписчик/);
   assert.match(html, /Анна Смирнова/);
-  assert.match(html, /data-style="graphite"/);
+  assert.match(html, /data-style="anime"/);
 });
 
 test("a production overlay waits honestly instead of showing a demo subscriber", async () => {
@@ -50,6 +50,12 @@ test("serves the style preview used inside Telegram", async () => {
   const bytes = await readFile(new URL("../public/style-preview.png", import.meta.url));
   assert.ok(bytes.byteLength > 40_000);
   assert.deepEqual([...bytes.slice(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+});
+
+test("ships the animated waving mascot", async () => {
+  const bytes = await readFile(new URL("../public/mascot-wave.gif", import.meta.url));
+  assert.ok(bytes.byteLength > 100_000);
+  assert.equal(bytes.slice(0, 6).toString("ascii"), "GIF89a");
 });
 
 test("start sends one message with working group and channel buttons", async () => {
@@ -364,11 +370,11 @@ test("panel stays compact and style shows visual choices in Telegram", async () 
     assert.equal(style.status, 200);
     const preview = calls.find((call) => call.method === "sendPhoto");
     assert.ok(preview);
-    assert.match(preview.body.photo, /\/style-preview\.png\?v=2$/);
+    assert.match(preview.body.photo, /\/style-preview\.png\?v=3$/);
     assert.match(preview.body.caption, /Оформление · ffdfd/);
-    assert.match(preview.body.caption, /Сейчас: <b>Графит<\/b>/);
-    assert.equal(preview.body.reply_markup.inline_keyboard[0][0].text, "✓ Графит");
-    assert.equal(preview.body.reply_markup.inline_keyboard[1][1].text, "Аниме");
+    assert.match(preview.body.caption, /Сейчас: <b>Аниме<\/b>/);
+    assert.match(preview.body.reply_markup.inline_keyboard[0][0].text, /^✓ /);
+    assert.equal(preview.body.reply_markup.inline_keyboard[0][0].callback_data, `style:${installation.id}:anime`);
 
     calls.length = 0;
     const chooseStyle = await request("/api/telegram/webhook", {
@@ -388,7 +394,7 @@ test("panel stays compact and style shows visual choices in Telegram", async () 
     const edit = calls.find((call) => call.method === "editMessageCaption");
     assert.ok(edit);
     assert.match(edit.body.caption, /Сейчас: <b>Только текст<\/b>/);
-    assert.equal(edit.body.reply_markup.inline_keyboard[1][0].text, "✓ Только текст");
+    assert.equal(edit.body.reply_markup.inline_keyboard[1][1].text, "✓ Только текст");
   } finally {
     globalThis.fetch = originalFetch;
     delete process.env.BOT_TOKEN;

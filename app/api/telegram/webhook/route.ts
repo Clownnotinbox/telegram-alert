@@ -146,12 +146,12 @@ function styleKeyboard(installation: StreamerInstallation) {
   return {
     inline_keyboard: [
       [
+        { text: `${installation.style === "anime" ? "✓ " : ""}Аниме`, callback_data: `style:${installation.id}:anime` },
         { text: `${installation.style === "graphite" ? "✓ " : ""}Графит`, callback_data: `style:${installation.id}:graphite` },
-        { text: `${installation.style === "paper" ? "✓ " : ""}Светлый`, callback_data: `style:${installation.id}:paper` },
       ],
       [
+        { text: `${installation.style === "paper" ? "✓ " : ""}Светлый`, callback_data: `style:${installation.id}:paper` },
         { text: `${installation.style === "mono" ? "✓ " : ""}Только текст`, callback_data: `style:${installation.id}:mono` },
-        { text: `${installation.style === "anime" ? "✓ " : ""}Аниме`, callback_data: `style:${installation.id}:anime` },
       ],
       [
         { text: "Проверить в OBS", callback_data: `test:${installation.id}` },
@@ -173,7 +173,7 @@ async function sendInstallationPanel(chatId: number | string, installation: Stre
 async function sendStylePanel(chatId: number | string, installation: StreamerInstallation, baseUrl: string) {
   await telegramCall("sendPhoto", {
     chat_id: chatId,
-    photo: `${baseUrl}/style-preview.png?v=2`,
+    photo: `${baseUrl}/style-preview.png?v=3`,
     caption: styleCaption(installation),
     parse_mode: "HTML",
     reply_markup: styleKeyboard(installation),
