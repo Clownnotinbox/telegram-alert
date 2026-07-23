@@ -141,10 +141,9 @@ function promptName(user?: TelegramUser) {
 
 async function sendConnectPrompt(chatId: number | string, user?: TelegramUser) {
   const name = promptName(user);
-  const text = `<b>${escapeHtml(name)}, небольшой технический ритуал:</b> добавьте бота в группу, а затем назначьте его администратором. Без этого Telegram не сообщает о новых участниках. Для канала есть отдельная кнопка.`;
+  const text = `<b>${escapeHtml(name)}, выберите, что подключаем:</b> в группе бота нужно назначить администратором после добавления. В канал Telegram сразу добавит его с минимальными правами администратора.`;
   const groupUrl = `https://t.me/${BOT_USERNAME}?startgroup=obs`;
-  const groupAppUrl = `tg://resolve?domain=${BOT_USERNAME}&startgroup=obs`;
-  const channelUrl = `https://t.me/${BOT_USERNAME}?startchannel=obs`;
+  const channelUrl = `https://t.me/${BOT_USERNAME}?startchannel&admin=manage_chat`;
   try {
     await telegramCall("sendMessage", {
       chat_id: chatId,
@@ -152,9 +151,8 @@ async function sendConnectPrompt(chatId: number | string, user?: TelegramUser) {
       parse_mode: "HTML",
       reply_markup: {
         inline_keyboard: [
-          [{ text: `👉 Добавить в группу, ${name}`, url: groupUrl }],
-          [{ text: "Открыть выбор в приложении Telegram", url: groupAppUrl }],
-          [{ text: "📣 Добавить в Telegram-канал", url: channelUrl }],
+          [{ text: `👥 Подключить группу, ${name}`, url: groupUrl }],
+          [{ text: "📣 Подключить Telegram-канал", url: channelUrl }],
         ],
       },
     });

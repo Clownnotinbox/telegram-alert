@@ -71,8 +71,8 @@ test("start sends one message with working group and channel buttons", async () 
     assert.match(prompt.body.reply_markup.inline_keyboard[0][0].text, /Дарина/);
     assert.match(prompt.body.reply_markup.inline_keyboard[0][0].url, /startgroup=obs/);
     assert.doesNotMatch(prompt.body.reply_markup.inline_keyboard[0][0].url, /admin=/);
-    assert.match(prompt.body.reply_markup.inline_keyboard[1][0].url, /^tg:\/\//);
-    assert.match(prompt.body.reply_markup.inline_keyboard[2][0].url, /startchannel=obs/);
+    assert.match(prompt.body.reply_markup.inline_keyboard[1][0].url, /\?startchannel&admin=manage_chat$/);
+    assert.equal(prompt.body.reply_markup.inline_keyboard.length, 2);
   } finally {
     globalThis.fetch = originalFetch;
     delete process.env.BOT_TOKEN;
