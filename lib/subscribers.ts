@@ -1,7 +1,7 @@
 import type { Pool, QueryResultRow } from "pg";
 import { runtimeEnv } from "./runtime-env";
 
-export const OVERLAY_STYLES = ["graphite", "paper", "mono", "anime"] as const;
+export const OVERLAY_STYLES = ["graphite", "paper", "mono", "anime", "anime_static"] as const;
 export type OverlayStyle = (typeof OVERLAY_STYLES)[number];
 
 export type OverlaySettings = {

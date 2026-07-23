@@ -65,7 +65,7 @@ export function Overlay({ preview, overlayKey }: { preview: boolean; overlayKey:
         const response = await fetch(`/api/subscribers?after=${cursor.current}${key}`, { cache: "no-store" });
         if (response.ok) {
           const data = (await response.json()) as Snapshot;
-          setStyle(data.settings.style);
+          if (!preview) setStyle(data.settings.style);
           if (!preview) setCommunity(data.community);
           if (!initialized.current) {
             initialized.current = true;

@@ -47,7 +47,8 @@ const STYLE_LABELS: Record<OverlayStyle, string> = {
   graphite: "Графит",
   paper: "Светлый",
   mono: "Только текст",
-  anime: "Аниме",
+  anime: "Аниме · движение",
+  anime_static: "Аниме · статика",
 };
 
 const BOT_USERNAME = "xedat1va_bot";
@@ -146,11 +147,14 @@ function styleKeyboard(installation: StreamerInstallation) {
   return {
     inline_keyboard: [
       [
-        { text: `${installation.style === "anime" ? "✓ " : ""}Аниме`, callback_data: `style:${installation.id}:anime` },
-        { text: `${installation.style === "graphite" ? "✓ " : ""}Графит`, callback_data: `style:${installation.id}:graphite` },
+        { text: `${installation.style === "anime" ? "✓ " : ""}Аниме · движение`, callback_data: `style:${installation.id}:anime` },
+        { text: `${installation.style === "anime_static" ? "✓ " : ""}Аниме · статика`, callback_data: `style:${installation.id}:anime_static` },
       ],
       [
+        { text: `${installation.style === "graphite" ? "✓ " : ""}Графит`, callback_data: `style:${installation.id}:graphite` },
         { text: `${installation.style === "paper" ? "✓ " : ""}Светлый`, callback_data: `style:${installation.id}:paper` },
+      ],
+      [
         { text: `${installation.style === "mono" ? "✓ " : ""}Только текст`, callback_data: `style:${installation.id}:mono` },
       ],
       [
@@ -173,7 +177,7 @@ async function sendInstallationPanel(chatId: number | string, installation: Stre
 async function sendStylePanel(chatId: number | string, installation: StreamerInstallation, baseUrl: string) {
   await telegramCall("sendPhoto", {
     chat_id: chatId,
-    photo: `${baseUrl}/style-preview.png?v=6`,
+    photo: `${baseUrl}/style-preview.png?v=7`,
     caption: styleCaption(installation),
     parse_mode: "HTML",
     reply_markup: styleKeyboard(installation),

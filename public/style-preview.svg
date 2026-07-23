@@ -1,75 +1,55 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1260" viewBox="0 0 1200 1260">
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1260" viewBox="0 0 1800 1260">
   <defs>
     <linearGradient id="animeBg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#09142f"/>
-      <stop offset="0.32" stop-color="#29376d"/>
-      <stop offset="0.58" stop-color="#512b67"/>
-      <stop offset="0.82" stop-color="#0d6977"/>
-      <stop offset="1" stop-color="#132342"/>
+      <stop offset="0" stop-color="#09142f"/><stop offset="0.32" stop-color="#29376d"/>
+      <stop offset="0.58" stop-color="#512b67"/><stop offset="0.82" stop-color="#0d6977"/><stop offset="1" stop-color="#132342"/>
     </linearGradient>
-    <radialGradient id="animeGlow" cx="82%" cy="18%" r="60%">
-      <stop offset="0" stop-color="#6cebff" stop-opacity="0.26"/>
-      <stop offset="1" stop-color="#6cebff" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="avatarRing" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0" stop-color="#64e8f1"/>
-      <stop offset="0.46" stop-color="#6688e0"/>
-      <stop offset="0.72" stop-color="#9a62c9"/>
-      <stop offset="1" stop-color="#f0a83f"/>
-    </linearGradient>
-    <linearGradient id="qrPanel" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#17305a" stop-opacity="0.96"/>
-      <stop offset="1" stop-color="#1a274e" stop-opacity="0.82"/>
-    </linearGradient>
+    <radialGradient id="animeGlow" cx="82%" cy="18%" r="60%"><stop offset="0" stop-color="#6cebff" stop-opacity="0.26"/><stop offset="1" stop-color="#6cebff" stop-opacity="0"/></radialGradient>
+    <linearGradient id="avatarRing" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#64e8f1"/><stop offset="0.46" stop-color="#6688e0"/><stop offset="0.72" stop-color="#9a62c9"/><stop offset="1" stop-color="#f0a83f"/></linearGradient>
+    <linearGradient id="qrFrame" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7bf2f5"/><stop offset="0.58" stop-color="#6688e0"/><stop offset="1" stop-color="#f0a83f"/></linearGradient>
   </defs>
-  <rect width="1200" height="1260" rx="40" fill="#e9e9e6"/>
-
+  <rect width="1800" height="1260" rx="40" fill="#e9e9e6"/>
   <g font-family="Segoe UI, Arial, sans-serif">
-    <g transform="translate(580 0)">
-    <text x="50" y="54" fill="#5f5f5b" font-size="23" font-weight="600" letter-spacing="2">ГРАФИТ</text>
-    <rect x="50" y="78" width="520" height="520" rx="34" fill="#141516" stroke="#363739" stroke-width="2"/>
-    <path d="M72 112V100Q72 94 78 94H96M548 112V100Q548 94 542 94H524M72 564V576Q72 582 78 582H96M548 564V576Q548 582 542 582H524" fill="none" stroke="#777a7b"/>
-    <rect x="84" y="174" width="112" height="112" rx="30" fill="#2d2e2f"/><text x="140" y="242" text-anchor="middle" fill="#fff" font-size="31" font-weight="700">АС</text>
-    <circle cx="224" cy="196" r="6" fill="#686865"/><text x="240" y="201" fill="#aaa9a3" font-size="13" font-weight="600" letter-spacing="1">ПОСЛЕДНИЙ ПОДПИСЧИК</text>
-    <text x="220" y="250" fill="#fff" font-size="30" font-weight="650">Анна Смирнова</text>
-    <rect x="84" y="410" width="452" height="142" rx="22" fill="#fff" fill-opacity="0.055" stroke="#fff" stroke-opacity="0.11"/>
-    <text x="106" y="447" fill="#aaa9a3" font-size="10" font-weight="600" letter-spacing="1">TELEGRAM-СООБЩЕСТВО</text><text x="106" y="478" fill="#fff" font-size="20" font-weight="650">Даринино сообщество</text><text x="106" y="504" fill="#aaa9a3" font-size="11">Наведите камеру, чтобы открыть</text>
+    <text x="40" y="54" fill="#426589" font-size="23" font-weight="700" letter-spacing="1.5">АНИМЕ · ДВИЖЕНИЕ</text>
+    <g transform="translate(40 80)">
+      <rect width="520" height="520" rx="34" fill="url(#animeBg)" stroke="#4c91a8" stroke-width="2"/><rect width="520" height="520" rx="34" fill="url(#animeGlow)"/>
+      <path d="M22 34V22Q22 16 28 16H46M498 34V22Q498 16 492 16H474M22 486V498Q22 504 28 504H46M498 486V498Q498 504 492 504H474" fill="none" stroke="#8cecff" stroke-opacity="0.78"/>
+      <circle cx="76" cy="76" r="42" fill="url(#avatarRing)"/><circle cx="76" cy="76" r="36" fill="#192b50" stroke="#10203d" stroke-width="4"/><text x="76" y="84" text-anchor="middle" fill="#fff" font-size="20" font-weight="700">АС</text>
+      <text x="132" y="70" fill="#fff" font-size="26" font-weight="720">Анна</text><text x="132" y="99" fill="#fff" font-size="26" font-weight="720">Смирнова</text>
+      <rect x="40" y="338" width="154" height="154" rx="24" fill="#13264e" fill-opacity="0.92" stroke="#8febff" stroke-opacity="0.35"/><rect x="50" y="348" width="134" height="134" rx="19" fill="url(#qrFrame)"/>
+      <text x="454" y="68" fill="#ffd36c" font-size="26">✦</text><text x="482" y="122" fill="#ffd36c" font-size="16">✦</text>
     </g>
 
-    <g transform="translate(-580 608)">
-    <text x="630" y="54" fill="#5f5f5b" font-size="23" font-weight="600" letter-spacing="2">СВЕТЛЫЙ</text>
-    <rect x="630" y="78" width="520" height="520" rx="34" fill="#fff" stroke="#cdcdc7" stroke-width="2"/>
-    <path d="M652 112V100Q652 94 658 94H676M1128 112V100Q1128 94 1122 94H1104M652 564V576Q652 582 658 582H676M1128 564V576Q1128 582 1122 582H1104" fill="none" stroke="#777772"/>
-    <rect x="664" y="174" width="112" height="112" rx="30" fill="#ededeb"/><text x="720" y="242" text-anchor="middle" fill="#242422" font-size="31" font-weight="700">АС</text>
-    <circle cx="804" cy="196" r="6" fill="#74746f"/><text x="820" y="201" fill="#74746f" font-size="13" font-weight="600" letter-spacing="1">ПОСЛЕДНИЙ ПОДПИСЧИК</text>
-    <text x="800" y="250" fill="#161616" font-size="30" font-weight="650">Анна Смирнова</text>
-    <rect x="664" y="410" width="452" height="142" rx="22" fill="#161616" fill-opacity="0.045" stroke="#161616" stroke-opacity="0.1"/>
-    <text x="686" y="447" fill="#74746f" font-size="10" font-weight="600" letter-spacing="1">TELEGRAM-СООБЩЕСТВО</text><text x="686" y="478" fill="#161616" font-size="20" font-weight="650">Даринино сообщество</text><text x="686" y="504" fill="#74746f" font-size="11">Наведите камеру, чтобы открыть</text>
+    <text x="640" y="54" fill="#426589" font-size="23" font-weight="700" letter-spacing="1.5">АНИМЕ · СТАТИКА</text>
+    <g transform="translate(640 80)">
+      <rect width="520" height="520" rx="34" fill="url(#animeBg)" stroke="#4c91a8" stroke-width="2"/><rect width="520" height="520" rx="34" fill="url(#animeGlow)"/>
+      <path d="M22 34V22Q22 16 28 16H46M498 34V22Q498 16 492 16H474M22 486V498Q22 504 28 504H46M498 486V498Q498 504 492 504H474" fill="none" stroke="#8cecff" stroke-opacity="0.78"/>
+      <circle cx="76" cy="76" r="42" fill="url(#avatarRing)"/><circle cx="76" cy="76" r="36" fill="#192b50" stroke="#10203d" stroke-width="4"/><text x="76" y="84" text-anchor="middle" fill="#fff" font-size="20" font-weight="700">АС</text>
+      <text x="132" y="70" fill="#fff" font-size="26" font-weight="720">Анна</text><text x="132" y="99" fill="#fff" font-size="26" font-weight="720">Смирнова</text>
+      <rect x="40" y="338" width="154" height="154" rx="24" fill="#13264e" fill-opacity="0.92" stroke="#8febff" stroke-opacity="0.35"/><rect x="50" y="348" width="134" height="134" rx="19" fill="url(#qrFrame)"/>
     </g>
 
-    <g transform="translate(580 0)">
-    <text x="50" y="662" fill="#5f5f5b" font-size="23" font-weight="600" letter-spacing="2">ТОЛЬКО ТЕКСТ</text>
-    <rect x="50" y="686" width="520" height="520" rx="16" fill="#151515" fill-opacity="0.9" stroke="#fff" stroke-opacity="0.14"/>
-    <rect x="50" y="686" width="4" height="520" rx="2" fill="#fff"/>
-    <circle cx="90" cy="845" r="6" fill="#8f8f8c"/><text x="106" y="850" fill="#b8b8b4" font-size="13" font-weight="600" letter-spacing="1">ПОСЛЕДНИЙ ПОДПИСЧИК</text>
-    <text x="84" y="910" fill="#fff" font-size="38" font-weight="650">Анна Смирнова</text>
-    <line x1="84" y1="1040" x2="536" y2="1040" stroke="#fff" stroke-opacity="0.14"/>
-    <text x="84" y="1080" fill="#b8b8b4" font-size="10" font-weight="600" letter-spacing="1">TELEGRAM-СООБЩЕСТВО</text><text x="84" y="1114" fill="#fff" font-size="20" font-weight="650">Даринино сообщество</text>
+    <text x="1240" y="54" fill="#5f5f5b" font-size="23" font-weight="600" letter-spacing="2">ГРАФИТ</text>
+    <g transform="translate(1240 80)">
+      <rect width="520" height="520" rx="34" fill="#141516" stroke="#363739" stroke-width="2"/><path d="M22 34V22Q22 16 28 16H46M498 34V22Q498 16 492 16H474M22 486V498Q22 504 28 504H46M498 486V498Q498 504 492 504H474" fill="none" stroke="#777a7b"/>
+      <rect x="34" y="96" width="112" height="112" rx="30" fill="#2d2e2f"/><text x="90" y="164" text-anchor="middle" fill="#fff" font-size="31" font-weight="700">АС</text>
+      <circle cx="174" cy="118" r="6" fill="#686865"/><text x="190" y="123" fill="#aaa9a3" font-size="13" font-weight="600" letter-spacing="1">ПОСЛЕДНИЙ ПОДПИСЧИК</text><text x="170" y="172" fill="#fff" font-size="30" font-weight="650">Анна Смирнова</text>
+      <rect x="34" y="332" width="452" height="142" rx="22" fill="#fff" fill-opacity="0.055" stroke="#fff" stroke-opacity="0.11"/><text x="56" y="369" fill="#aaa9a3" font-size="10" font-weight="600" letter-spacing="1">TELEGRAM-СООБЩЕСТВО</text><text x="56" y="400" fill="#fff" font-size="20" font-weight="650">Даринино сообщество</text>
     </g>
 
-    <g transform="translate(-580 -608)">
-    <text x="630" y="662" fill="#4b6688" font-size="23" font-weight="700" letter-spacing="1.5">АНИМЕ · ПО УМОЛЧАНИЮ</text>
-    <rect x="630" y="686" width="520" height="520" rx="34" fill="url(#animeBg)" stroke="#4c91a8" stroke-width="2"/>
-    <rect x="630" y="686" width="520" height="520" rx="34" fill="url(#animeGlow)"/>
-    <path d="M652 720V708Q652 702 658 702H676M1128 720V708Q1128 702 1122 702H1104M652 1172V1184Q652 1190 658 1190H676M1128 1172V1184Q1128 1190 1122 1190H1104" fill="none" stroke="#8cecff" stroke-opacity="0.78"/>
-    <circle cx="691" cy="770" r="42" fill="url(#avatarRing)"/>
-    <circle cx="691" cy="770" r="36" fill="#192b50" stroke="#10203d" stroke-width="4"/><text x="691" y="778" text-anchor="middle" fill="#fff" font-size="20" font-weight="700">АС</text>
-    <circle cx="742" cy="757" r="6" fill="#68e5f1"/><text x="754" y="762" fill="#d8e4f6" font-size="10" font-weight="650" letter-spacing="0.8">НОВЫЙ ПОДПИСЧИК</text>
-    <text x="652" y="867" fill="#fff" font-size="36" font-weight="720">Анна</text><text x="652" y="903" fill="#fff" font-size="36" font-weight="720">Смирнова</text>
-    <rect x="650" y="1048" width="210" height="118" rx="24" fill="url(#qrPanel)" stroke="#8febff" stroke-opacity="0.3"/>
-    <rect x="658" y="1056" width="100" height="100" rx="20" fill="url(#avatarRing)"/>
-    <text x="770" y="1097" fill="#fff" font-size="14" font-weight="700">Открыть</text><text x="770" y="1115" fill="#fff" font-size="14" font-weight="700">Telegram</text><text x="770" y="1141" fill="#cbdcf3" font-size="10">сканируй QR-код</text>
-    <text x="1018" y="748" fill="#ffd36c" font-size="27">✦</text><text x="1090" y="806" fill="#ffd36c" font-size="17">✦</text>
+    <text x="340" y="674" fill="#5f5f5b" font-size="23" font-weight="600" letter-spacing="2">СВЕТЛЫЙ</text>
+    <g transform="translate(340 700)">
+      <rect width="520" height="520" rx="34" fill="#fff" stroke="#cdcdc7" stroke-width="2"/><path d="M22 34V22Q22 16 28 16H46M498 34V22Q498 16 492 16H474M22 486V498Q22 504 28 504H46M498 486V498Q498 504 492 504H474" fill="none" stroke="#777772"/>
+      <rect x="34" y="96" width="112" height="112" rx="30" fill="#ededeb"/><text x="90" y="164" text-anchor="middle" fill="#242422" font-size="31" font-weight="700">АС</text>
+      <circle cx="174" cy="118" r="6" fill="#74746f"/><text x="190" y="123" fill="#74746f" font-size="13" font-weight="600" letter-spacing="1">ПОСЛЕДНИЙ ПОДПИСЧИК</text><text x="170" y="172" fill="#161616" font-size="30" font-weight="650">Анна Смирнова</text>
+      <rect x="34" y="332" width="452" height="142" rx="22" fill="#161616" fill-opacity="0.045" stroke="#161616" stroke-opacity="0.1"/><text x="56" y="369" fill="#74746f" font-size="10" font-weight="600" letter-spacing="1">TELEGRAM-СООБЩЕСТВО</text><text x="56" y="400" fill="#161616" font-size="20" font-weight="650">Даринино сообщество</text>
+    </g>
+
+    <text x="940" y="674" fill="#5f5f5b" font-size="23" font-weight="600" letter-spacing="2">ТОЛЬКО ТЕКСТ</text>
+    <g transform="translate(940 700)">
+      <rect width="520" height="520" rx="16" fill="#151515" fill-opacity="0.9" stroke="#fff" stroke-opacity="0.14"/><rect width="4" height="520" rx="2" fill="#fff"/>
+      <circle cx="40" cy="159" r="6" fill="#8f8f8c"/><text x="56" y="164" fill="#b8b8b4" font-size="13" font-weight="600" letter-spacing="1">ПОСЛЕДНИЙ ПОДПИСЧИК</text><text x="34" y="224" fill="#fff" font-size="38" font-weight="650">Анна Смирнова</text>
+      <line x1="34" y1="354" x2="486" y2="354" stroke="#fff" stroke-opacity="0.14"/><text x="34" y="394" fill="#b8b8b4" font-size="10" font-weight="600" letter-spacing="1">TELEGRAM-СООБЩЕСТВО</text><text x="34" y="428" fill="#fff" font-size="20" font-weight="650">Даринино сообщество</text>
     </g>
   </g>
 </svg>

@@ -34,11 +34,11 @@ test("renders the OBS overlay", async () => {
   const response = await request("/overlay?preview=1");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /Последний подписчик/);
+  assert.doesNotMatch(html, /Последний подписчик/);
   assert.match(html, /Анна Смирнова/);
   assert.doesNotMatch(html, /@annasmirnova/);
   assert.match(html, /data-style="anime"/);
-  assert.match(html, /\/mascot-anime\.png\?v=4/);
+  assert.match(html, /\/mascot-anime\.png\?v=5/);
 });
 
 test("a production overlay waits honestly instead of showing a demo subscriber", async () => {
@@ -53,21 +53,26 @@ test("serves the style preview used inside Telegram", async () => {
   const bytes = await readFile(new URL("../public/style-preview.png", import.meta.url));
   assert.ok(bytes.byteLength > 40_000);
   assert.deepEqual([...bytes.slice(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+  const metadata = await sharp(bytes).metadata();
+  assert.equal(metadata.width, 1800);
+  assert.equal(metadata.height, 1260);
 });
 
-test("ships a registered hand-wave animation with a pixel-static body", async () => {
-  const [bytes, stillBytes] = await Promise.all([
+test("ships a registered full-body wave with shoulder and head follow-through", async () => {
+  const [bytes, stillBytes, staticBytes, baseBytes] = await Promise.all([
     readFile(new URL("../public/mascot-wave.gif", import.meta.url)),
     readFile(new URL("../public/mascot-anime.png", import.meta.url)),
+    readFile(new URL("../public/mascot-anime-static.png", import.meta.url)),
+    readFile(new URL("../public/mascot-anime-base.png", import.meta.url)),
   ]);
   assert.ok(bytes.byteLength > 100_000);
   assert.equal(bytes.slice(0, 6).toString("ascii"), "GIF89a");
 
   const animation = sharp(bytes, { animated: true });
   const metadata = await animation.metadata();
-  assert.equal(metadata.pages, 9);
+  assert.equal(metadata.pages, 17);
   assert.equal(metadata.pageHeight, 520);
-  assert.deepEqual(metadata.delay, [240, 80, 70, 130, 70, 80, 130, 80, 420]);
+  assert.deepEqual(metadata.delay, [180, 80, 70, 70, 70, 70, 70, 90, 130, 90, 70, 70, 70, 70, 80, 100, 360]);
 
   const { data, info } = await animation.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const still = await sharp(stillBytes).ensureAlpha().raw().toBuffer();
@@ -83,23 +88,43 @@ test("ships a registered hand-wave animation with a pixel-static body", async ()
     }
   }
 
-  let movingArmPixels = 0;
-  for (let page = 1; page < info.pages; page += 1) {
-    for (let y = 0; y < info.pageHeight; y += 1) {
-      for (let x = 0; x < info.width; x += 1) {
-        const insideArm = x >= 40 && x < 236 && y >= 35 && y < 326;
-        const firstOffset = (y * info.width + x) * info.channels;
-        const pageOffset = page * pageSize + firstOffset;
-        const changed = Buffer.compare(
-          first.subarray(firstOffset, firstOffset + 4),
-          data.subarray(pageOffset, pageOffset + 4),
-        ) !== 0;
-        if (insideArm && changed) movingArmPixels += 1;
-        if (!insideArm) assert.equal(changed, false, `body drift at frame ${page}, pixel ${x},${y}`);
+  const anchors = [];
+  let upperBodyChanges = 0;
+  for (let page = 0; page < info.pages; page += 1) {
+    let weightedX = 0;
+    let weight = 0;
+    for (let y = 364; y < info.pageHeight; y += 1) {
+      for (let x = 114; x < 406; x += 1) {
+        const offset = page * pageSize + (y * info.width + x) * info.channels;
+        const alpha = data[offset + 3];
+        if (alpha >= 96) {
+          weightedX += x * alpha;
+          weight += alpha;
+        }
+      }
+    }
+    anchors.push(weightedX / weight);
+
+    if (page > 0) {
+      for (let y = 55; y < 330; y += 1) {
+        for (let x = 120; x < 420; x += 1) {
+          const firstOffset = (y * info.width + x) * info.channels;
+          const pageOffset = page * pageSize + firstOffset;
+          if (Buffer.compare(first.subarray(firstOffset, firstOffset + 4), data.subarray(pageOffset, pageOffset + 4)) !== 0) {
+            upperBodyChanges += 1;
+          }
+        }
       }
     }
   }
-  assert.ok(movingArmPixels > 50_000, "the hand should visibly move across the generated poses");
+  assert.ok(Math.max(...anchors) - Math.min(...anchors) <= 10, "the torso must not rock side-to-side");
+  assert.ok(upperBodyChanges > 500_000, "the shoulder and head should visibly follow the wave");
+
+  const [staticRaw, baseRaw] = await Promise.all([
+    sharp(staticBytes).ensureAlpha().raw().toBuffer(),
+    sharp(baseBytes).ensureAlpha().raw().toBuffer(),
+  ]);
+  assert.equal(Buffer.compare(staticRaw, baseRaw), 0, "the static anime style must use the original clean mascot");
 });
 
 test("start sends one message with working group and channel buttons", async () => {
@@ -414,11 +439,12 @@ test("panel stays compact and style shows visual choices in Telegram", async () 
     assert.equal(style.status, 200);
     const preview = calls.find((call) => call.method === "sendPhoto");
     assert.ok(preview);
-    assert.match(preview.body.photo, /\/style-preview\.png\?v=6$/);
+    assert.match(preview.body.photo, /\/style-preview\.png\?v=7$/);
     assert.match(preview.body.caption, /Оформление · ffdfd/);
-    assert.match(preview.body.caption, /Сейчас: <b>Аниме<\/b>/);
+    assert.match(preview.body.caption, /Сейчас: <b>Аниме · движение<\/b>/);
     assert.match(preview.body.reply_markup.inline_keyboard[0][0].text, /^✓ /);
     assert.equal(preview.body.reply_markup.inline_keyboard[0][0].callback_data, `style:${installation.id}:anime`);
+    assert.equal(preview.body.reply_markup.inline_keyboard[0][1].callback_data, `style:${installation.id}:anime_static`);
 
     calls.length = 0;
     const chooseStyle = await request("/api/telegram/webhook", {
@@ -438,7 +464,27 @@ test("panel stays compact and style shows visual choices in Telegram", async () 
     const edit = calls.find((call) => call.method === "editMessageCaption");
     assert.ok(edit);
     assert.match(edit.body.caption, /Сейчас: <b>Только текст<\/b>/);
-    assert.equal(edit.body.reply_markup.inline_keyboard[1][1].text, "✓ Только текст");
+    assert.equal(edit.body.reply_markup.inline_keyboard[2][0].text, "✓ Только текст");
+
+    calls.length = 0;
+    const chooseStaticAnime = await request("/api/telegram/webhook", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        update_id: 84,
+        callback_query: {
+          id: "style-static-anime",
+          from: { id: ownerId },
+          data: `style:${installation.id}:anime_static`,
+          message: { message_id: 902, chat: { id: ownerId, type: "private" }, photo: [{}] },
+        },
+      }),
+    });
+    assert.equal(chooseStaticAnime.status, 200);
+    const staticEdit = calls.find((call) => call.method === "editMessageCaption");
+    assert.ok(staticEdit);
+    assert.match(staticEdit.body.caption, /Сейчас: <b>Аниме · статика<\/b>/);
+    assert.match(staticEdit.body.reply_markup.inline_keyboard[0][1].text, /^✓ /);
   } finally {
     globalThis.fetch = originalFetch;
     delete process.env.BOT_TOKEN;

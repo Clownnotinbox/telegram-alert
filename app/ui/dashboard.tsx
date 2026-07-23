@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import type { OverlayStyle } from "./types";
 
 const STYLE_NAMES: Record<OverlayStyle, string> = {
-  anime: "Аниме",
+  anime: "Аниме · движение",
+  anime_static: "Аниме · статика",
   graphite: "Графит",
   paper: "Светлый",
   mono: "Только текст",
