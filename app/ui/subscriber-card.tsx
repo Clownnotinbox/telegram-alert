@@ -7,6 +7,8 @@ import QRCode from "qrcode";
 import { useEffect, useRef, useState } from "react";
 import type { OverlayCommunity, OverlayStyle, Subscriber } from "./types";
 
+const ANIME_QR_URL = "https://t.me/xedat1va";
+
 function initials(name: string) {
   return name
     .trim()
@@ -16,18 +18,20 @@ function initials(name: string) {
     .join("") || "TG";
 }
 
-function QrMark({ value }: { value: string }) {
+function QrMark({ value, themed = false }: { value: string; themed?: boolean }) {
   const canvas = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (!canvas.current) return;
     void QRCode.toCanvas(canvas.current, value, {
-      width: 104,
+      width: 132,
       margin: 1,
-      errorCorrectionLevel: "M",
-      color: { dark: "#111111", light: "#ffffff" },
+      errorCorrectionLevel: themed ? "H" : "M",
+      color: themed
+        ? { dark: "#123253", light: "#f2fbff" }
+        : { dark: "#111111", light: "#ffffff" },
     });
-  }, [value]);
+  }, [themed, value]);
 
   return <canvas ref={canvas} className="community-qr" aria-label="QR-код публичной ссылки на чат" />;
 }
@@ -49,10 +53,9 @@ export function SubscriberCard({
 
   const waiting = !subscriber;
   const name = subscriber?.name ?? "Ждём нового подписчика";
-  const meta = subscriber
-    ? subscriber.username ? `@${subscriber.username}` : "Новый участник Telegram"
-    : "Появится здесь после вступления";
-  const waveSource = `/mascot-wave.gif?v=1&event=${subscriber?.sequence ?? 0}`;
+  const nameLength = Array.from(name).length;
+  const nameClass = nameLength > 44 ? "is-very-long" : nameLength > 26 ? "is-long" : "";
+  const waveSource = `/mascot-wave.gif?v=2&event=${subscriber?.sequence ?? 0}`;
 
   return (
     <div className="subscriber-wrap" data-style={style} data-waiting={waiting || undefined} data-testid="subscriber-design">
@@ -87,16 +90,17 @@ export function SubscriberCard({
               <span className={`subscriber-indicator ${celebrating ? "is-live" : ""}`} />
               {celebrating ? "Новый подписчик" : waiting ? "Ожидаем подписчика" : "Последний подписчик"}
             </div>
-            <h2 className="subscriber-name">{name}</h2>
-            <div className="subscriber-meta">{meta}</div>
+            <h2 className={`subscriber-name ${nameClass}`}>{name}</h2>
           </div>
         </div>
 
-        {style === "anime" && community?.url && (
+        {style === "anime" && (
           <footer className="anime-qr">
-            <QrMark value={community.url} />
-            <div>
-              <strong>Присоединяйся</strong>
+            <div className="anime-qr-code">
+              <QrMark value={ANIME_QR_URL} themed />
+            </div>
+            <div className="anime-qr-copy">
+              <strong>Открыть Telegram</strong>
               <span>сканируй QR-код</span>
             </div>
           </footer>
