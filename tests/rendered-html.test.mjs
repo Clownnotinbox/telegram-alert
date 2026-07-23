@@ -70,9 +70,47 @@ test("start sends one message with working group and channel buttons", async () 
     const prompt = calls.find((call) => call.method === "sendMessage");
     assert.match(prompt.body.reply_markup.inline_keyboard[0][0].text, /Дарина/);
     assert.match(prompt.body.reply_markup.inline_keyboard[0][0].url, /startgroup=obs/);
-    assert.doesNotMatch(prompt.body.reply_markup.inline_keyboard[0][0].url, /admin=/);
+    assert.match(prompt.body.reply_markup.inline_keyboard[0][0].url, /admin=manage_chat$/);
     assert.match(prompt.body.reply_markup.inline_keyboard[1][0].url, /\?startchannel&admin=manage_chat$/);
     assert.equal(prompt.body.reply_markup.inline_keyboard.length, 2);
+
+    calls.length = 0;
+    const groupCommand = await request("/api/telegram/webhook", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        update_id: 42,
+        message: {
+          message_id: 5,
+          text: "/start",
+          chat: { id: -100500, type: "supergroup", title: "Тихая группа" },
+          from: { id: 101, first_name: "Дарина" },
+        },
+      }),
+    });
+    assert.equal(groupCommand.status, 200);
+    assert.equal((await groupCommand.json()).ignored, true);
+    assert.equal(calls.length, 0);
+
+    const membership = await request("/api/telegram/webhook", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        update_id: 43,
+        my_chat_member: {
+          chat: { id: -100500, type: "supergroup", title: "Тихая группа" },
+          from: { id: 101, first_name: "Дарина" },
+          old_chat_member: { status: "left", user: { id: 777 } },
+          new_chat_member: { status: "member", user: { id: 777 } },
+          date: 1_700_000_000,
+        },
+      }),
+    });
+    assert.equal(membership.status, 200);
+    assert.equal((await membership.json()).needsAdministrator, true);
+    const membershipMessages = calls.filter((call) => call.method === "sendMessage");
+    assert.equal(membershipMessages.length, 1);
+    assert.equal(membershipMessages[0].body.chat_id, 101);
   } finally {
     globalThis.fetch = originalFetch;
     delete process.env.BOT_TOKEN;

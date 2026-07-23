@@ -141,8 +141,8 @@ function promptName(user?: TelegramUser) {
 
 async function sendConnectPrompt(chatId: number | string, user?: TelegramUser) {
   const name = promptName(user);
-  const text = `<b>${escapeHtml(name)}, выберите, что подключаем:</b> в группе бота нужно назначить администратором после добавления. В канал Telegram сразу добавит его с минимальными правами администратора.`;
-  const groupUrl = `https://t.me/${BOT_USERNAME}?startgroup=obs`;
+  const text = `<b>${escapeHtml(name)}, выберите, что подключаем:</b> Telegram добавит бота с минимальными правами администратора. Сам бот ничего писать в выбранный чат не будет.`;
+  const groupUrl = `https://t.me/${BOT_USERNAME}?startgroup=obs&admin=manage_chat`;
   const channelUrl = `https://t.me/${BOT_USERNAME}?startchannel&admin=manage_chat`;
   try {
     await telegramCall("sendMessage", {
@@ -352,6 +352,10 @@ export async function POST(request: Request) {
   }
 
   const message = update.message;
+  if (message && message.chat.type !== "private") {
+    return Response.json({ ok: true, ignored: true });
+  }
+
   if (message?.chat_shared && message.from) {
     const result = await registerChannel(message.from, message.chat.id, {
       id: message.chat_shared.chat_id,
@@ -409,10 +413,10 @@ export async function POST(request: Request) {
     if (!isMember(ownMembership.old_chat_member) && isMember(ownMembership.new_chat_member)) {
       const name = promptName(ownMembership.from);
       const instruction = `${name}, бот уже в чате «${ownMembership.chat.title || "Без названия"}». Теперь назначьте его администратором — после этого OBS-ссылка появится автоматически в личном диалоге.`;
-      await Promise.allSettled([
-        telegramCall("sendMessage", { chat_id: ownMembership.chat.id, text: instruction }),
-        telegramCall("sendMessage", { chat_id: ownMembership.from.id, text: instruction }),
-      ]);
+      await telegramCall("sendMessage", {
+        chat_id: ownMembership.from.id,
+        text: instruction,
+      }).catch(() => null);
       return Response.json({ ok: true, needsAdministrator: true });
     }
     if (existing && !isAdministrator(ownMembership.new_chat_member)) {
