@@ -12,7 +12,7 @@ import {
   type StreamerInstallation,
 } from "../../../../lib/subscribers";
 
-type TelegramUser = { id: number; first_name?: string; last_name?: string; username?: string };
+type TelegramUser = { id: number; is_bot?: boolean; first_name?: string; last_name?: string; username?: string };
 type TelegramMember = { status: string; is_member?: boolean; user: TelegramUser };
 type TelegramChat = { id: number; type?: string; title?: string; username?: string };
 type MemberUpdate = {
@@ -26,10 +26,12 @@ type TelegramUpdate = {
   update_id: number;
   message?: {
     message_id: number;
+    date?: number;
     text?: string;
     chat: TelegramChat;
     from?: TelegramUser;
     chat_shared?: { request_id: number; chat_id: number; title?: string; username?: string };
+    new_chat_members?: TelegramUser[];
   };
   callback_query?: {
     id: string;
@@ -141,9 +143,9 @@ function promptName(user?: TelegramUser) {
 
 async function sendConnectPrompt(chatId: number | string, user?: TelegramUser) {
   const name = promptName(user);
-  const text = `<b>${escapeHtml(name)}, выберите, что подключаем:</b> Telegram добавит бота с минимальными правами администратора. Сам бот ничего писать в выбранный чат не будет.`;
-  const groupUrl = `https://t.me/${BOT_USERNAME}?startgroup=obs&admin=manage_chat`;
-  const channelUrl = `https://t.me/${BOT_USERNAME}?startchannel&admin=manage_chat`;
+  const text = `<b>${escapeHtml(name)}, выберите, что подключаем:</b> для группы права администратора не нужны. Канал откроется в приложении Telegram и запросит минимальные права администратора. Сам бот ничего писать в выбранный чат не будет.`;
+  const groupUrl = `https://t.me/${BOT_USERNAME}?startgroup=obs`;
+  const channelUrl = `tg://resolve?domain=${BOT_USERNAME}&startchannel&admin=manage_chat`;
   try {
     await telegramCall("sendMessage", {
       chat_id: chatId,
@@ -152,7 +154,7 @@ async function sendConnectPrompt(chatId: number | string, user?: TelegramUser) {
       reply_markup: {
         inline_keyboard: [
           [{ text: `👥 Подключить группу, ${name}`, url: groupUrl }],
-          [{ text: "📣 Подключить Telegram-канал", url: channelUrl }],
+          [{ text: "📣 Подключить канал в приложении Telegram", url: channelUrl }],
         ],
       },
     });
@@ -352,6 +354,29 @@ export async function POST(request: Request) {
   }
 
   const message = update.message;
+  if (message?.new_chat_members?.length && ["group", "supergroup"].includes(message.chat.type || "")) {
+    const installation = await getInstallationByChannelId(String(message.chat.id));
+    if (!installation || !installation.active) {
+      return Response.json({ ok: true, ignored: true });
+    }
+
+    const joinedAt = new Date((message.date ?? Math.floor(Date.now() / 1000)) * 1000).toISOString();
+    const subscribers = [];
+    for (const user of message.new_chat_members.filter((member) => !member.is_bot)) {
+      subscribers.push(await recordSubscriber({
+        eventKey: `telegram-member:${message.chat.id}:${user.id}:${message.date ?? update.update_id}`,
+        installationId: installation.id,
+        id: String(user.id),
+        name: displayName(user),
+        username: user.username ?? null,
+        avatarUrl: null,
+        joinedAt,
+        source: "telegram-group-service",
+      }));
+    }
+    return Response.json({ ok: true, subscribers });
+  }
+
   if (message && message.chat.type !== "private") {
     return Response.json({ ok: true, ignored: true });
   }
@@ -411,15 +436,22 @@ export async function POST(request: Request) {
       return Response.json({ ok: true, installation: result.installation, conflict: result.ownershipConflict });
     }
     if (!isMember(ownMembership.old_chat_member) && isMember(ownMembership.new_chat_member)) {
-      const name = promptName(ownMembership.from);
-      const instruction = `${name}, бот уже в чате «${ownMembership.chat.title || "Без названия"}». Теперь назначьте его администратором — после этого OBS-ссылка появится автоматически в личном диалоге.`;
-      await telegramCall("sendMessage", {
-        chat_id: ownMembership.from.id,
-        text: instruction,
-      }).catch(() => null);
+      if (["group", "supergroup"].includes(ownMembership.chat.type || "")) {
+        const result = await registerChannel(ownMembership.from, ownMembership.from.id, ownMembership.chat);
+        if (!result.ownershipConflict && result.created) {
+          await telegramCall("sendMessage", {
+            chat_id: ownMembership.from.id,
+            text: `Группа «${result.installation.channelTitle}» подключена без прав администратора. Откройте /panel, чтобы получить OBS-ссылку.`,
+          }).catch(() => null);
+        }
+        return Response.json({ ok: true, installation: result.installation, conflict: result.ownershipConflict });
+      }
       return Response.json({ ok: true, needsAdministrator: true });
     }
     if (existing && !isAdministrator(ownMembership.new_chat_member)) {
+      if (["group", "supergroup"].includes(ownMembership.chat.type || "") && isMember(ownMembership.new_chat_member)) {
+        return Response.json({ ok: true, installation: existing });
+      }
       await setInstallationActive(existing.id, false);
       if (isMember(ownMembership.new_chat_member)) {
         await telegramCall("sendMessage", {
@@ -443,7 +475,7 @@ export async function POST(request: Request) {
 
   const user = change.new_chat_member.user;
   const subscriber = await recordSubscriber({
-    eventKey: `telegram-update:${change.chat.id}:${update.update_id}`,
+    eventKey: `telegram-member:${change.chat.id}:${user.id}:${change.date}`,
     installationId: installation.id,
     id: String(user.id),
     name: displayName(user),

@@ -70,8 +70,8 @@ test("start sends one message with working group and channel buttons", async () 
     const prompt = calls.find((call) => call.method === "sendMessage");
     assert.match(prompt.body.reply_markup.inline_keyboard[0][0].text, /Дарина/);
     assert.match(prompt.body.reply_markup.inline_keyboard[0][0].url, /startgroup=obs/);
-    assert.match(prompt.body.reply_markup.inline_keyboard[0][0].url, /admin=manage_chat$/);
-    assert.match(prompt.body.reply_markup.inline_keyboard[1][0].url, /\?startchannel&admin=manage_chat$/);
+    assert.doesNotMatch(prompt.body.reply_markup.inline_keyboard[0][0].url, /admin=/);
+    assert.match(prompt.body.reply_markup.inline_keyboard[1][0].url, /^tg:\/\/resolve\?domain=xedat1va_bot&startchannel&admin=manage_chat$/);
     assert.equal(prompt.body.reply_markup.inline_keyboard.length, 2);
 
     calls.length = 0;
@@ -107,7 +107,7 @@ test("start sends one message with working group and channel buttons", async () 
       }),
     });
     assert.equal(membership.status, 200);
-    assert.equal((await membership.json()).needsAdministrator, true);
+    assert.ok((await membership.json()).installation);
     const membershipMessages = calls.filter((call) => call.method === "sendMessage");
     assert.equal(membershipMessages.length, 1);
     assert.equal(membershipMessages[0].body.chat_id, 101);
@@ -115,6 +115,50 @@ test("start sends one message with working group and channel buttons", async () 
     globalThis.fetch = originalFetch;
     delete process.env.BOT_TOKEN;
   }
+});
+
+test("a regular group member receives join events without bot admin rights", async () => {
+  const connected = await request("/api/telegram/webhook", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      update_id: 50,
+      my_chat_member: {
+        chat: { id: -100700, type: "supergroup", title: "Группа без администратора" },
+        from: { id: 303, first_name: "Дарина" },
+        old_chat_member: { status: "left", user: { id: 777, is_bot: true } },
+        new_chat_member: { status: "member", user: { id: 777, is_bot: true } },
+        date: 1_700_000_000,
+      },
+    }),
+  });
+  assert.equal(connected.status, 200);
+  const installation = (await connected.json()).installation;
+  assert.equal(installation.ownerUserId, "303");
+  assert.equal(installation.active, true);
+
+  const joined = await request("/api/telegram/webhook", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      update_id: 51,
+      message: {
+        message_id: 8,
+        date: 1_700_000_100,
+        chat: { id: -100700, type: "supergroup", title: "Группа без администратора" },
+        new_chat_members: [{ id: 404, first_name: "Новый", last_name: "Зритель" }],
+      },
+    }),
+  });
+  assert.equal(joined.status, 200);
+  const subscriber = (await joined.json()).subscribers[0];
+  assert.equal(subscriber.name, "Новый Зритель");
+
+  const snapshot = await request(`/api/subscribers?after=0&key=${installation.overlayKey}`, {
+    headers: { accept: "application/json" },
+  });
+  assert.equal(snapshot.status, 200);
+  assert.equal((await snapshot.json()).latest.name, "Новый Зритель");
 });
 
 test("self-service flow creates a private overlay, changes style and sends a test", async () => {
