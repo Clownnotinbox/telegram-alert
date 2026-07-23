@@ -141,9 +141,10 @@ function promptName(user?: TelegramUser) {
 
 async function sendConnectPrompt(chatId: number | string, user?: TelegramUser) {
   const name = promptName(user);
-  const text = `<b>${escapeHtml(name)}, небольшой технический ритуал:</b> нажмите кнопку и выберите группу. Telegram откроет список чатов, куда вы можете добавить бота. Для канала есть отдельная кнопка.`;
-  const groupUrl = `https://t.me/${BOT_USERNAME}?startgroup=obs&admin=manage_chat+invite_users`;
-  const channelUrl = `https://t.me/${BOT_USERNAME}?startchannel=obs&admin=manage_chat+invite_users`;
+  const text = `<b>${escapeHtml(name)}, небольшой технический ритуал:</b> добавьте бота в группу, а затем назначьте его администратором. Без этого Telegram не сообщает о новых участниках. Для канала есть отдельная кнопка.`;
+  const groupUrl = `https://t.me/${BOT_USERNAME}?startgroup=obs`;
+  const groupAppUrl = `tg://resolve?domain=${BOT_USERNAME}&startgroup=obs`;
+  const channelUrl = `https://t.me/${BOT_USERNAME}?startchannel=obs`;
   try {
     await telegramCall("sendMessage", {
       chat_id: chatId,
@@ -151,8 +152,9 @@ async function sendConnectPrompt(chatId: number | string, user?: TelegramUser) {
       parse_mode: "HTML",
       reply_markup: {
         inline_keyboard: [
-          [{ text: `👉 Нажимать сюда, ${name}`, url: groupUrl }],
-          [{ text: "📣 Или подключить Telegram-канал", url: channelUrl }],
+          [{ text: `👉 Добавить в группу, ${name}`, url: groupUrl }],
+          [{ text: "Открыть выбор в приложении Telegram", url: groupAppUrl }],
+          [{ text: "📣 Добавить в Telegram-канал", url: channelUrl }],
         ],
       },
     });
@@ -160,7 +162,7 @@ async function sendConnectPrompt(chatId: number | string, user?: TelegramUser) {
     console.error("Telegram onboarding buttons failed", error);
     await telegramCall("sendMessage", {
       chat_id: chatId,
-      text: `${text}\n\n<a href="${groupUrl}">Выбрать группу</a> · <a href="${channelUrl}">Выбрать канал</a>`,
+      text: `${text}\n\n<a href="${groupUrl}">Добавить в группу</a> · <a href="${channelUrl}">Добавить в канал</a>`,
       parse_mode: "HTML",
       link_preview_options: { is_disabled: true },
     }).catch((fallbackError) => console.error("Telegram onboarding fallback failed", fallbackError));
@@ -405,6 +407,15 @@ export async function POST(request: Request) {
         }).catch(() => null);
       }
       return Response.json({ ok: true, installation: result.installation, conflict: result.ownershipConflict });
+    }
+    if (!isMember(ownMembership.old_chat_member) && isMember(ownMembership.new_chat_member)) {
+      const name = promptName(ownMembership.from);
+      const instruction = `${name}, бот уже в чате «${ownMembership.chat.title || "Без названия"}». Теперь назначьте его администратором — после этого OBS-ссылка появится автоматически в личном диалоге.`;
+      await Promise.allSettled([
+        telegramCall("sendMessage", { chat_id: ownMembership.chat.id, text: instruction }),
+        telegramCall("sendMessage", { chat_id: ownMembership.from.id, text: instruction }),
+      ]);
+      return Response.json({ ok: true, needsAdministrator: true });
     }
     if (existing && !isAdministrator(ownMembership.new_chat_member)) {
       await setInstallationActive(existing.id, false);
