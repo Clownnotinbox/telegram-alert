@@ -44,7 +44,7 @@ function playGentleChime() {
 export function Overlay({ preview, overlayKey }: { preview: boolean; overlayKey: string | null }) {
   const [subscriber, setSubscriber] = useState<Subscriber | null>(preview ? DEMO_SUBSCRIBER : null);
   const [community, setCommunity] = useState<OverlayCommunity | null>(
-    preview ? { title: "Даринино сообщество", url: "https://t.me/xedat1va_bot" } : null,
+    preview ? { title: "Даринино сообщество", url: "https://t.me/xedat1va" } : null,
   );
   const [phase, setPhase] = useState<"idle" | "exit" | "enter">("idle");
   const [celebrating, setCelebrating] = useState(false);

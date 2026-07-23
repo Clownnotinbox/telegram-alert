@@ -878,7 +878,7 @@ a { -webkit-tap-highlight-color: transparent; }
 .anime-qr {
   position: absolute;
   z-index: 4;
-  bottom: 20px;
+  bottom: 36px;
   left: 20px;
   display: flex;
   width: 190px;

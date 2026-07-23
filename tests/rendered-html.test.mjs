@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import sharp from "sharp";
 
 const workerUrl = new URL("../dist/server/index.js", import.meta.url);
 
@@ -37,6 +38,7 @@ test("renders the OBS overlay", async () => {
   assert.match(html, /Анна Смирнова/);
   assert.doesNotMatch(html, /@annasmirnova/);
   assert.match(html, /data-style="anime"/);
+  assert.match(html, /\/mascot-anime\.png\?v=4/);
 });
 
 test("a production overlay waits honestly instead of showing a demo subscriber", async () => {
@@ -53,10 +55,51 @@ test("serves the style preview used inside Telegram", async () => {
   assert.deepEqual([...bytes.slice(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
 });
 
-test("ships the animated waving mascot", async () => {
-  const bytes = await readFile(new URL("../public/mascot-wave.gif", import.meta.url));
+test("ships a registered hand-wave animation with a pixel-static body", async () => {
+  const [bytes, stillBytes] = await Promise.all([
+    readFile(new URL("../public/mascot-wave.gif", import.meta.url)),
+    readFile(new URL("../public/mascot-anime.png", import.meta.url)),
+  ]);
   assert.ok(bytes.byteLength > 100_000);
   assert.equal(bytes.slice(0, 6).toString("ascii"), "GIF89a");
+
+  const animation = sharp(bytes, { animated: true });
+  const metadata = await animation.metadata();
+  assert.equal(metadata.pages, 9);
+  assert.equal(metadata.pageHeight, 520);
+  assert.deepEqual(metadata.delay, [240, 80, 70, 130, 70, 80, 130, 80, 420]);
+
+  const { data, info } = await animation.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const still = await sharp(stillBytes).ensureAlpha().raw().toBuffer();
+  const pageSize = info.width * info.pageHeight * info.channels;
+  const first = data.subarray(0, pageSize);
+  const last = data.subarray(pageSize * (info.pages - 1), pageSize * info.pages);
+  assert.equal(Buffer.compare(first, last), 0, "the GIF must finish on its exact first pose");
+
+  for (let offset = 0; offset < pageSize; offset += info.channels) {
+    const bothTransparent = first[offset + 3] === 0 && still[offset + 3] === 0;
+    if (!bothTransparent) {
+      assert.equal(Buffer.compare(first.subarray(offset, offset + 4), still.subarray(offset, offset + 4)), 0);
+    }
+  }
+
+  let movingArmPixels = 0;
+  for (let page = 1; page < info.pages; page += 1) {
+    for (let y = 0; y < info.pageHeight; y += 1) {
+      for (let x = 0; x < info.width; x += 1) {
+        const insideArm = x >= 40 && x < 236 && y >= 35 && y < 326;
+        const firstOffset = (y * info.width + x) * info.channels;
+        const pageOffset = page * pageSize + firstOffset;
+        const changed = Buffer.compare(
+          first.subarray(firstOffset, firstOffset + 4),
+          data.subarray(pageOffset, pageOffset + 4),
+        ) !== 0;
+        if (insideArm && changed) movingArmPixels += 1;
+        if (!insideArm) assert.equal(changed, false, `body drift at frame ${page}, pixel ${x},${y}`);
+      }
+    }
+  }
+  assert.ok(movingArmPixels > 50_000, "the hand should visibly move across the generated poses");
 });
 
 test("start sends one message with working group and channel buttons", async () => {
@@ -371,7 +414,7 @@ test("panel stays compact and style shows visual choices in Telegram", async () 
     assert.equal(style.status, 200);
     const preview = calls.find((call) => call.method === "sendPhoto");
     assert.ok(preview);
-    assert.match(preview.body.photo, /\/style-preview\.png\?v=5$/);
+    assert.match(preview.body.photo, /\/style-preview\.png\?v=6$/);
     assert.match(preview.body.caption, /Оформление · ffdfd/);
     assert.match(preview.body.caption, /Сейчас: <b>Аниме<\/b>/);
     assert.match(preview.body.reply_markup.inline_keyboard[0][0].text, /^✓ /);

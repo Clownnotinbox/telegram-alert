@@ -66,9 +66,9 @@
     <circle cx="691" cy="770" r="36" fill="#192b50" stroke="#10203d" stroke-width="4"/><text x="691" y="778" text-anchor="middle" fill="#fff" font-size="20" font-weight="700">АС</text>
     <circle cx="742" cy="757" r="6" fill="#68e5f1"/><text x="754" y="762" fill="#d8e4f6" font-size="10" font-weight="650" letter-spacing="0.8">НОВЫЙ ПОДПИСЧИК</text>
     <text x="652" y="867" fill="#fff" font-size="36" font-weight="720">Анна</text><text x="652" y="903" fill="#fff" font-size="36" font-weight="720">Смирнова</text>
-    <rect x="650" y="1068" width="210" height="118" rx="24" fill="url(#qrPanel)" stroke="#8febff" stroke-opacity="0.3"/>
-    <rect x="658" y="1076" width="100" height="100" rx="20" fill="url(#avatarRing)"/>
-    <text x="770" y="1117" fill="#fff" font-size="14" font-weight="700">Открыть</text><text x="770" y="1135" fill="#fff" font-size="14" font-weight="700">Telegram</text><text x="770" y="1161" fill="#cbdcf3" font-size="10">сканируй QR-код</text>
+    <rect x="650" y="1048" width="210" height="118" rx="24" fill="url(#qrPanel)" stroke="#8febff" stroke-opacity="0.3"/>
+    <rect x="658" y="1056" width="100" height="100" rx="20" fill="url(#avatarRing)"/>
+    <text x="770" y="1097" fill="#fff" font-size="14" font-weight="700">Открыть</text><text x="770" y="1115" fill="#fff" font-size="14" font-weight="700">Telegram</text><text x="770" y="1141" fill="#cbdcf3" font-size="10">сканируй QR-код</text>
     <text x="1018" y="748" fill="#ffd36c" font-size="27">✦</text><text x="1090" y="806" fill="#ffd36c" font-size="17">✦</text>
     </g>
   </g>

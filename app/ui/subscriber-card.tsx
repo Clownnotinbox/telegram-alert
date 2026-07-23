@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import type { OverlayCommunity, OverlayStyle, Subscriber } from "./types";
 
 const ANIME_QR_URL = "https://t.me/xedat1va";
+const MASCOT_ASSET_VERSION = 4;
 
 function initials(name: string) {
   return name
@@ -55,7 +56,7 @@ export function SubscriberCard({
   const name = subscriber?.name ?? "Ждём нового подписчика";
   const nameLength = Array.from(name).length;
   const nameClass = nameLength > 44 ? "is-very-long" : nameLength > 26 ? "is-long" : "";
-  const waveSource = `/mascot-wave.gif?v=3&event=${subscriber?.sequence ?? 0}`;
+  const waveSource = `/mascot-wave.gif?v=${MASCOT_ASSET_VERSION}&event=${subscriber?.sequence ?? 0}`;
 
   return (
     <div className="subscriber-wrap" data-style={style} data-waiting={waiting || undefined} data-testid="subscriber-design">
@@ -67,7 +68,7 @@ export function SubscriberCard({
 
         <div className={`anime-mascot ${celebrating ? "is-celebrating" : ""}`} aria-hidden="true">
           {/* Both original mascot assets are generated locally; no external image host is used. */}
-          <img className="mascot-still" src="/mascot-anime.png" alt="" />
+          <img className="mascot-still" src={`/mascot-anime.png?v=${MASCOT_ASSET_VERSION}`} alt="" />
           {celebrating && <img className="mascot-wave" src={waveSource} alt="" />}
           <span className="mascot-spark spark-one">✦</span>
           <span className="mascot-spark spark-two">✦</span>
