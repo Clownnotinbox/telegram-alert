@@ -2,9 +2,20 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SubscriberCard } from "./subscriber-card";
-import { DEMO_SUBSCRIBER, type OverlaySettings, type OverlayStyle, type Subscriber } from "./types";
+import {
+  DEMO_SUBSCRIBER,
+  type OverlayCommunity,
+  type OverlaySettings,
+  type OverlayStyle,
+  type Subscriber,
+} from "./types";
 
-type Snapshot = { latest: Subscriber | null; events: Subscriber[]; settings: OverlaySettings };
+type Snapshot = {
+  latest: Subscriber | null;
+  events: Subscriber[];
+  settings: OverlaySettings;
+  community: OverlayCommunity | null;
+};
 
 function playGentleChime() {
   if (typeof window === "undefined" || !new URLSearchParams(window.location.search).has("sound")) return;
@@ -31,7 +42,10 @@ function playGentleChime() {
 }
 
 export function Overlay({ preview, overlayKey }: { preview: boolean; overlayKey: string | null }) {
-  const [subscriber, setSubscriber] = useState<Subscriber>(DEMO_SUBSCRIBER);
+  const [subscriber, setSubscriber] = useState<Subscriber | null>(preview ? DEMO_SUBSCRIBER : null);
+  const [community, setCommunity] = useState<OverlayCommunity | null>(
+    preview ? { title: "Даринино сообщество", url: "https://t.me/xedat1va_bot" } : null,
+  );
   const [phase, setPhase] = useState<"idle" | "exit" | "enter">("idle");
   const [celebrating, setCelebrating] = useState(false);
   const [queue, setQueue] = useState<Subscriber[]>([]);
@@ -52,6 +66,7 @@ export function Overlay({ preview, overlayKey }: { preview: boolean; overlayKey:
         if (response.ok) {
           const data = (await response.json()) as Snapshot;
           setStyle(data.settings.style);
+          if (!preview) setCommunity(data.community);
           if (!initialized.current) {
             initialized.current = true;
             if (data.latest) setSubscriber(data.latest);
@@ -73,7 +88,7 @@ export function Overlay({ preview, overlayKey }: { preview: boolean; overlayKey:
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [overlayKey]);
+  }, [overlayKey, preview]);
 
   useEffect(() => {
     if (animating.current || queue.length === 0) return;
@@ -102,7 +117,13 @@ export function Overlay({ preview, overlayKey }: { preview: boolean; overlayKey:
 
   return (
     <main className={`overlay-page ${preview ? "is-preview" : ""}`}>
-      <SubscriberCard subscriber={subscriber} phase={phase} celebrating={celebrating} style={style} />
+      <SubscriberCard
+        subscriber={subscriber}
+        community={community}
+        phase={phase}
+        celebrating={celebrating}
+        style={style}
+      />
     </main>
   );
 }

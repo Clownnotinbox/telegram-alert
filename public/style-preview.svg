@@ -1,38 +1,47 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
-  <rect width="1200" height="900" rx="40" fill="#e9e9e6"/>
-
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1260" viewBox="0 0 1200 1260">
+  <rect width="1200" height="1260" rx="40" fill="#e9e9e6"/>
   <g font-family="Segoe UI, Arial, sans-serif">
-    <text x="64" y="60" fill="#5f5f5b" font-size="24" font-weight="600" letter-spacing="2">ГРАФИТ</text>
-    <rect x="64" y="84" width="1072" height="204" rx="32" fill="#171717" stroke="#373737" stroke-width="2"/>
-    <rect x="96" y="118" width="136" height="136" rx="34" fill="#30302f"/>
-    <text x="164" y="201" text-anchor="middle" fill="#ffffff" font-size="39" font-weight="700">АС</text>
-    <rect x="207" y="220" width="48" height="36" rx="12" fill="#269ed8" stroke="#171717" stroke-width="5"/>
-    <text x="231" y="244" text-anchor="middle" fill="#ffffff" font-size="17" font-weight="700">tg</text>
-    <circle cx="277" cy="137" r="7" fill="#686865"/>
-    <text x="298" y="144" fill="#9c9c98" font-size="20" font-weight="600" letter-spacing="2">ПОСЛЕДНИЙ ПОДПИСЧИК</text>
-    <text x="270" y="207" fill="#ffffff" font-size="48" font-weight="650">Анна Смирнова</text>
-    <text x="272" y="244" fill="#9c9c98" font-size="22">@annasmirnova</text>
-    <text x="1044" y="142" text-anchor="end" fill="#9c9c98" font-size="19">последний</text>
+    <text x="50" y="54" fill="#5f5f5b" font-size="23" font-weight="600" letter-spacing="2">ГРАФИТ</text>
+    <rect x="50" y="78" width="520" height="520" rx="34" fill="#141516" stroke="#363739" stroke-width="2"/>
+    <path d="M72 112V100Q72 94 78 94H96M548 112V100Q548 94 542 94H524M72 564V576Q72 582 78 582H96M548 564V576Q548 582 542 582H524" fill="none" stroke="#777a7b"/>
+    <rect x="84" y="108" width="27" height="21" rx="7" fill="#269ed8"/><text x="97.5" y="123" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">tg</text>
+    <text x="121" y="123" fill="#aaa9a3" font-size="11" font-weight="600" letter-spacing="1">TELEGRAM ALERT</text>
+    <text x="536" y="123" text-anchor="end" fill="#aaa9a3" font-size="10">последний</text>
+    <rect x="84" y="192" width="112" height="112" rx="30" fill="#2d2e2f"/><text x="140" y="260" text-anchor="middle" fill="#fff" font-size="31" font-weight="700">АС</text>
+    <circle cx="224" cy="213" r="6" fill="#686865"/><text x="240" y="218" fill="#aaa9a3" font-size="13" font-weight="600" letter-spacing="1">ПОСЛЕДНИЙ ПОДПИСЧИК</text>
+    <text x="220" y="266" fill="#fff" font-size="30" font-weight="650">Анна Смирнова</text><text x="221" y="294" fill="#aaa9a3" font-size="14">@annasmirnova</text>
+    <rect x="84" y="410" width="452" height="142" rx="22" fill="#fff" fill-opacity="0.055" stroke="#fff" stroke-opacity="0.11"/>
+    <text x="106" y="447" fill="#aaa9a3" font-size="10" font-weight="600" letter-spacing="1">TELEGRAM-СООБЩЕСТВО</text><text x="106" y="478" fill="#fff" font-size="20" font-weight="650">Даринино сообщество</text><text x="106" y="504" fill="#aaa9a3" font-size="11">Наведите камеру, чтобы открыть</text>
 
-    <text x="64" y="350" fill="#5f5f5b" font-size="24" font-weight="600" letter-spacing="2">СВЕТЛЫЙ</text>
-    <rect x="64" y="374" width="1072" height="204" rx="32" fill="#ffffff" stroke="#d0d0ca" stroke-width="2"/>
-    <rect x="96" y="408" width="136" height="136" rx="34" fill="#ededeb"/>
-    <text x="164" y="491" text-anchor="middle" fill="#242422" font-size="39" font-weight="700">АС</text>
-    <rect x="207" y="510" width="48" height="36" rx="12" fill="#269ed8" stroke="#ffffff" stroke-width="5"/>
-    <text x="231" y="534" text-anchor="middle" fill="#ffffff" font-size="17" font-weight="700">tg</text>
-    <circle cx="277" cy="427" r="7" fill="#74746f"/>
-    <text x="298" y="434" fill="#74746f" font-size="20" font-weight="600" letter-spacing="2">ПОСЛЕДНИЙ ПОДПИСЧИК</text>
-    <text x="270" y="497" fill="#161616" font-size="48" font-weight="650">Анна Смирнова</text>
-    <text x="272" y="534" fill="#74746f" font-size="22">@annasmirnova</text>
-    <text x="1044" y="432" text-anchor="end" fill="#74746f" font-size="19">последний</text>
+    <text x="630" y="54" fill="#5f5f5b" font-size="23" font-weight="600" letter-spacing="2">СВЕТЛЫЙ</text>
+    <rect x="630" y="78" width="520" height="520" rx="34" fill="#fff" stroke="#cdcdc7" stroke-width="2"/>
+    <path d="M652 112V100Q652 94 658 94H676M1128 112V100Q1128 94 1122 94H1104M652 564V576Q652 582 658 582H676M1128 564V576Q1128 582 1122 582H1104" fill="none" stroke="#777772"/>
+    <rect x="664" y="108" width="27" height="21" rx="7" fill="#269ed8"/><text x="677.5" y="123" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">tg</text>
+    <text x="701" y="123" fill="#74746f" font-size="11" font-weight="600" letter-spacing="1">TELEGRAM ALERT</text><text x="1116" y="123" text-anchor="end" fill="#74746f" font-size="10">последний</text>
+    <rect x="664" y="192" width="112" height="112" rx="30" fill="#ededeb"/><text x="720" y="260" text-anchor="middle" fill="#242422" font-size="31" font-weight="700">АС</text>
+    <circle cx="804" cy="213" r="6" fill="#74746f"/><text x="820" y="218" fill="#74746f" font-size="13" font-weight="600" letter-spacing="1">ПОСЛЕДНИЙ ПОДПИСЧИК</text>
+    <text x="800" y="266" fill="#161616" font-size="30" font-weight="650">Анна Смирнова</text><text x="801" y="294" fill="#74746f" font-size="14">@annasmirnova</text>
+    <rect x="664" y="410" width="452" height="142" rx="22" fill="#161616" fill-opacity="0.045" stroke="#161616" stroke-opacity="0.1"/>
+    <text x="686" y="447" fill="#74746f" font-size="10" font-weight="600" letter-spacing="1">TELEGRAM-СООБЩЕСТВО</text><text x="686" y="478" fill="#161616" font-size="20" font-weight="650">Даринино сообщество</text><text x="686" y="504" fill="#74746f" font-size="11">Наведите камеру, чтобы открыть</text>
 
-    <text x="64" y="640" fill="#5f5f5b" font-size="24" font-weight="600" letter-spacing="2">ТОЛЬКО ТЕКСТ</text>
-    <rect x="64" y="664" width="1072" height="172" rx="18" fill="#161616" fill-opacity="0.88"/>
-    <rect x="64" y="664" width="5" height="172" rx="2" fill="#ffffff"/>
-    <circle cx="104" cy="711" r="7" fill="#8f8f8c"/>
-    <text x="126" y="718" fill="#b8b8b4" font-size="20" font-weight="600" letter-spacing="2">ПОСЛЕДНИЙ ПОДПИСЧИК</text>
-    <text x="98" y="782" fill="#ffffff" font-size="48" font-weight="650">Анна Смирнова</text>
-    <text x="100" y="816" fill="#b8b8b4" font-size="22">@annasmirnova</text>
-    <text x="1086" y="714" text-anchor="end" fill="#b8b8b4" font-size="19">последний</text>
+    <text x="50" y="662" fill="#5f5f5b" font-size="23" font-weight="600" letter-spacing="2">ТОЛЬКО ТЕКСТ</text>
+    <rect x="50" y="686" width="520" height="520" rx="16" fill="#151515" fill-opacity="0.9" stroke="#fff" stroke-opacity="0.14"/>
+    <rect x="50" y="686" width="4" height="520" rx="2" fill="#fff"/>
+    <rect x="84" y="716" width="27" height="21" rx="7" fill="#269ed8"/><text x="97.5" y="731" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">tg</text><text x="121" y="731" fill="#b8b8b4" font-size="11" font-weight="600" letter-spacing="1">TELEGRAM ALERT</text>
+    <circle cx="90" cy="845" r="6" fill="#8f8f8c"/><text x="106" y="850" fill="#b8b8b4" font-size="13" font-weight="600" letter-spacing="1">ПОСЛЕДНИЙ ПОДПИСЧИК</text>
+    <text x="84" y="910" fill="#fff" font-size="38" font-weight="650">Анна Смирнова</text><text x="85" y="942" fill="#b8b8b4" font-size="15">@annasmirnova</text>
+    <line x1="84" y1="1040" x2="536" y2="1040" stroke="#fff" stroke-opacity="0.14"/>
+    <text x="84" y="1080" fill="#b8b8b4" font-size="10" font-weight="600" letter-spacing="1">TELEGRAM-СООБЩЕСТВО</text><text x="84" y="1114" fill="#fff" font-size="20" font-weight="650">Даринино сообщество</text>
+
+    <text x="630" y="662" fill="#5f5f5b" font-size="23" font-weight="600" letter-spacing="2">АНИМЕ</text>
+    <rect x="630" y="686" width="520" height="520" rx="34" fill="#111b35" stroke="#2f687d" stroke-width="2"/>
+    <circle cx="1080" cy="746" r="180" fill="#58d4e5" fill-opacity="0.12"/>
+    <path d="M652 720V708Q652 702 658 702H676M1128 720V708Q1128 702 1122 702H1104M652 1172V1184Q652 1190 658 1190H676M1128 1172V1184Q1128 1190 1122 1190H1104" fill="none" stroke="#58d4e5" stroke-opacity="0.7"/>
+    <rect x="664" y="716" width="27" height="21" rx="7" fill="#269ed8"/><text x="677.5" y="731" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">tg</text><text x="701" y="731" fill="#aebbd1" font-size="11" font-weight="600" letter-spacing="1">TELEGRAM ALERT</text>
+    <rect x="664" y="850" width="90" height="90" rx="25" fill="#213254"/><text x="709" y="906" text-anchor="middle" fill="#fff" font-size="26" font-weight="700">АС</text>
+    <circle cx="780" cy="866" r="6" fill="#58d4e5"/><text x="796" y="871" fill="#aebbd1" font-size="12" font-weight="600" letter-spacing="1">НОВЫЙ ПОДПИСЧИК</text>
+    <text x="778" y="912" fill="#fff" font-size="27" font-weight="650">Анна Смирнова</text><text x="779" y="938" fill="#aebbd1" font-size="13">@annasmirnova</text>
+    <rect x="664" y="1018" width="452" height="142" rx="22" fill="#081020" fill-opacity="0.6" stroke="#fff" stroke-opacity="0.11"/>
+    <text x="686" y="1055" fill="#aebbd1" font-size="10" font-weight="600" letter-spacing="1">TELEGRAM-СООБЩЕСТВО</text><text x="686" y="1086" fill="#fff" font-size="20" font-weight="650">Даринино сообщество</text><text x="686" y="1112" fill="#aebbd1" font-size="11">Наведите камеру, чтобы открыть</text>
   </g>
 </svg>

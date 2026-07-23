@@ -1,7 +1,7 @@
 import type { Pool, QueryResultRow } from "pg";
 import { runtimeEnv } from "./runtime-env";
 
-export const OVERLAY_STYLES = ["graphite", "paper", "mono"] as const;
+export const OVERLAY_STYLES = ["graphite", "paper", "mono", "anime"] as const;
 export type OverlayStyle = (typeof OVERLAY_STYLES)[number];
 
 export type OverlaySettings = {
@@ -499,6 +499,25 @@ export async function recordSubscriber(input: NewSubscriber): Promise<Subscriber
   const next = { ...input, installationId, sequence: (store.at(-1)?.sequence ?? 0) + 1 };
   store.push(next);
   return next;
+}
+
+export async function installationHasSubscriber(installationId: string, externalId: string) {
+  const pool = await postgresPool();
+  if (pool) {
+    const result = await pool.query(
+      "SELECT 1 FROM subscriber_events WHERE installation_id = $1 AND external_id = $2 LIMIT 1",
+      [installationId, externalId],
+    );
+    return Boolean(result.rows[0]);
+  }
+  const db = await d1Database();
+  if (db) {
+    const row = await db.prepare(
+      "SELECT sequence FROM subscriber_events WHERE installation_id = ? AND external_id = ? LIMIT 1",
+    ).bind(installationId, externalId).first<{ sequence: number }>();
+    return Boolean(row);
+  }
+  return memoryEvents().some((event) => event.installationId === installationId && event.id === externalId);
 }
 
 export async function subscriberSnapshot(after: number, installationId: string | null = null) {

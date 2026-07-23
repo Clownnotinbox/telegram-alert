@@ -8,6 +8,7 @@ const STYLE_NAMES: Record<OverlayStyle, string> = {
   graphite: "Графит",
   paper: "Светлый",
   mono: "Только текст",
+  anime: "Аниме",
 };
 
 type BotInfo = { ready: boolean; username?: string; name?: string };
@@ -69,7 +70,7 @@ export function Dashboard() {
                 <span className="panel-kicker">Предпросмотр</span>
                 <h2 className="panel-title">Минималистичное уведомление</h2>
               </div>
-              <span className="preview-dimensions">520 × 120</span>
+              <span className="preview-dimensions">420 × 420</span>
             </div>
             <div className="preview-window">
               <iframe src="/overlay?preview=1" title="Предпросмотр уведомления о подписчике" />

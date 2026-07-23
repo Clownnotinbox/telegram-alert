@@ -11,7 +11,15 @@ export async function GET(request: Request) {
     return Response.json({ error: "Оверлей не найден или отключён" }, { status: 404 });
   }
   const snapshot = await subscriberSnapshot(after, installation?.id ?? null);
-  return Response.json(snapshot, { headers: { "cache-control": "no-store, no-cache, must-revalidate" } });
+  return Response.json({
+    ...snapshot,
+    community: installation
+      ? {
+          title: installation.channelTitle,
+          url: installation.channelUsername ? `https://t.me/${installation.channelUsername}` : null,
+        }
+      : null,
+  }, { headers: { "cache-control": "no-store, no-cache, must-revalidate" } });
 }
 
 export async function POST(request: Request) {

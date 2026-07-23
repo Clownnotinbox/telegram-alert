@@ -38,6 +38,14 @@ test("renders the OBS overlay", async () => {
   assert.match(html, /data-style="graphite"/);
 });
 
+test("a production overlay waits honestly instead of showing a demo subscriber", async () => {
+  const response = await request("/overlay?key=not-a-demo-key");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /Ждём нового подписчика/);
+  assert.doesNotMatch(html, /Анна Смирнова/);
+});
+
 test("serves the style preview used inside Telegram", async () => {
   const bytes = await readFile(new URL("../public/style-preview.png", import.meta.url));
   assert.ok(bytes.byteLength > 40_000);
@@ -160,12 +168,59 @@ test("a regular group member receives join events without bot admin rights", asy
   assert.equal(joined.status, 200);
   const subscriber = (await joined.json()).subscribers[0];
   assert.equal(subscriber.name, "Новый Зритель");
+  assert.match(subscriber.avatarUrl, new RegExp(`/api/telegram/avatar\\?key=${installation.overlayKey}&amp;user=404|/api/telegram/avatar\\?key=${installation.overlayKey}&user=404`));
 
   const snapshot = await request(`/api/subscribers?after=0&key=${installation.overlayKey}`, {
     headers: { accept: "application/json" },
   });
   assert.equal(snapshot.status, 200);
   assert.equal((await snapshot.json()).latest.name, "Новый Зритель");
+
+  const originalFetch = globalThis.fetch;
+  const telegramCalls = [];
+  process.env.BOT_TOKEN = "test-token";
+  globalThis.fetch = async (input, init) => {
+    const url = String(input);
+    if (!url.startsWith("https://api.telegram.org/")) return originalFetch(input, init);
+    telegramCalls.push(url);
+    if (url.includes("/getUserProfilePhotos")) {
+      return Response.json({
+        ok: true,
+        result: { total_count: 1, photos: [[
+          { file_id: "small", width: 64, height: 64 },
+          { file_id: "large", width: 320, height: 320 },
+        ]] },
+      });
+    }
+    if (url.includes("/getFile")) {
+      assert.equal(JSON.parse(init?.body || "{}").file_id, "large");
+      return Response.json({ ok: true, result: { file_path: "photos/avatar.jpg" } });
+    }
+    if (url.includes("/file/")) {
+      return new Response(Uint8Array.from([255, 216, 255, 217]), {
+        headers: { "content-type": "image/jpeg" },
+      });
+    }
+    throw new Error(`Unexpected Telegram request: ${url}`);
+  };
+
+  try {
+    const avatar = await request(`/api/telegram/avatar?key=${installation.overlayKey}&user=404`, {
+      headers: { accept: "image/*" },
+    });
+    assert.equal(avatar.status, 200);
+    assert.equal(avatar.headers.get("content-type"), "image/jpeg");
+    assert.deepEqual([...new Uint8Array(await avatar.arrayBuffer())], [255, 216, 255, 217]);
+
+    const unknownUser = await request(`/api/telegram/avatar?key=${installation.overlayKey}&user=405`, {
+      headers: { accept: "image/*" },
+    });
+    assert.equal(unknownUser.status, 404);
+    assert.equal(telegramCalls.filter((url) => url.includes("/getUserProfilePhotos")).length, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+    delete process.env.BOT_TOKEN;
+  }
 });
 
 test("self-service flow creates a private overlay, changes style and sends a test", async () => {
@@ -233,6 +288,7 @@ test("self-service flow creates a private overlay, changes style and sends a tes
   const snapshotBody = await snapshot.json();
   assert.equal(snapshotBody.settings.style, "paper");
   assert.equal(snapshotBody.latest.installationId, installation.id);
+  assert.deepEqual(snapshotBody.community, { title: "Test channel", url: "https://t.me/test_channel" });
 
   const privateSnapshot = await request("/api/subscribers?after=0&key=wrong-key", {
     headers: { accept: "application/json" },
@@ -308,10 +364,11 @@ test("panel stays compact and style shows visual choices in Telegram", async () 
     assert.equal(style.status, 200);
     const preview = calls.find((call) => call.method === "sendPhoto");
     assert.ok(preview);
-    assert.match(preview.body.photo, /\/style-preview\.png\?v=1$/);
+    assert.match(preview.body.photo, /\/style-preview\.png\?v=2$/);
     assert.match(preview.body.caption, /Оформление · ffdfd/);
     assert.match(preview.body.caption, /Сейчас: <b>Графит<\/b>/);
     assert.equal(preview.body.reply_markup.inline_keyboard[0][0].text, "✓ Графит");
+    assert.equal(preview.body.reply_markup.inline_keyboard[1][1].text, "Аниме");
 
     calls.length = 0;
     const chooseStyle = await request("/api/telegram/webhook", {

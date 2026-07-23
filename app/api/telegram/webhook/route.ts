@@ -47,6 +47,7 @@ const STYLE_LABELS: Record<OverlayStyle, string> = {
   graphite: "Графит",
   paper: "Светлый",
   mono: "Только текст",
+  anime: "Аниме",
 };
 
 const BOT_USERNAME = "xedat1va_bot";
@@ -93,6 +94,11 @@ function overlayUrl(baseUrl: string, installation: StreamerInstallation) {
   return `${baseUrl}/overlay?key=${installation.overlayKey}`;
 }
 
+function subscriberAvatarUrl(baseUrl: string, installation: StreamerInstallation, userId: number) {
+  const query = new URLSearchParams({ key: installation.overlayKey, user: String(userId) });
+  return `${baseUrl}/api/telegram/avatar?${query}`;
+}
+
 function installationPanelText(installation: StreamerInstallation, baseUrl: string) {
   const status = installation.active ? "работает" : "отключён";
   return [
@@ -103,7 +109,10 @@ function installationPanelText(installation: StreamerInstallation, baseUrl: stri
     "Ссылка для OBS:",
     `<code>${overlayUrl(baseUrl, installation)}</code>`,
     "",
-    "Размер Browser Source: <code>520 × 120</code>",
+    "Размер Browser Source: <code>420 × 420</code>",
+    installation.channelUsername
+      ? "QR-код публичной ссылки включён."
+      : "QR-код появится, когда у чата будет публичная @ссылка.",
     "Изменения применяются автоматически.",
   ].join("\n");
 }
@@ -140,7 +149,10 @@ function styleKeyboard(installation: StreamerInstallation) {
         { text: `${installation.style === "graphite" ? "✓ " : ""}Графит`, callback_data: `style:${installation.id}:graphite` },
         { text: `${installation.style === "paper" ? "✓ " : ""}Светлый`, callback_data: `style:${installation.id}:paper` },
       ],
-      [{ text: `${installation.style === "mono" ? "✓ " : ""}Только текст`, callback_data: `style:${installation.id}:mono` }],
+      [
+        { text: `${installation.style === "mono" ? "✓ " : ""}Только текст`, callback_data: `style:${installation.id}:mono` },
+        { text: `${installation.style === "anime" ? "✓ " : ""}Аниме`, callback_data: `style:${installation.id}:anime` },
+      ],
       [
         { text: "Проверить в OBS", callback_data: `test:${installation.id}` },
         { text: "← Вернуться к панели", callback_data: `channel:${installation.id}` },
@@ -161,7 +173,7 @@ async function sendInstallationPanel(chatId: number | string, installation: Stre
 async function sendStylePanel(chatId: number | string, installation: StreamerInstallation, baseUrl: string) {
   await telegramCall("sendPhoto", {
     chat_id: chatId,
-    photo: `${baseUrl}/style-preview.png?v=1`,
+    photo: `${baseUrl}/style-preview.png?v=2`,
     caption: styleCaption(installation),
     parse_mode: "HTML",
     reply_markup: styleKeyboard(installation),
@@ -457,7 +469,7 @@ export async function POST(request: Request) {
         id: String(user.id),
         name: displayName(user),
         username: user.username ?? null,
-        avatarUrl: null,
+        avatarUrl: subscriberAvatarUrl(baseUrl, installation, user.id),
         joinedAt,
         source: "telegram-group-service",
       }));
@@ -507,7 +519,7 @@ export async function POST(request: Request) {
   if (message?.text?.startsWith("/help")) {
     await telegramCall("sendMessage", {
       chat_id: message.chat.id,
-      text: "1. Откройте /panel\n2. Нажмите кнопку выбора группы или канала\n3. Выберите нужный чат\n4. Скопируйте OBS-ссылку\n5. Добавьте её как Browser Source 520 × 120\n\nВсё остальное бот сделает сам.",
+      text: "1. Откройте /panel\n2. Нажмите кнопку выбора группы или канала\n3. Выберите нужный чат\n4. Скопируйте OBS-ссылку\n5. Добавьте её как Browser Source 420 × 420\n\nВсё остальное бот сделает сам.",
     });
     return Response.json({ ok: true });
   }
@@ -574,7 +586,7 @@ export async function POST(request: Request) {
     id: String(user.id),
     name: displayName(user),
     username: user.username ?? null,
-    avatarUrl: null,
+    avatarUrl: subscriberAvatarUrl(baseUrl, installation, user.id),
     joinedAt: new Date(change.date * 1000).toISOString(),
     source: "telegram-channel",
   });
