@@ -37,7 +37,7 @@ type TelegramUpdate = {
     id: string;
     from: TelegramUser;
     data?: string;
-    message?: { message_id: number; chat: TelegramChat };
+    message?: { message_id: number; chat: TelegramChat; photo?: unknown[] };
   };
   my_chat_member?: MemberUpdate;
   chat_member?: MemberUpdate;
@@ -112,17 +112,38 @@ function installationKeyboard(installation: StreamerInstallation, baseUrl: strin
   return {
     inline_keyboard: [
       [
+        { text: "🎨 Изменить оформление", callback_data: `style-menu:${installation.id}` },
+        { text: "Проверить в OBS", callback_data: `test:${installation.id}` },
+      ],
+      [{ text: "Скопировать OBS-ссылку", copy_text: { text: overlayUrl(baseUrl, installation) } }],
+      [
+        { text: "Подключить ещё группу или канал", callback_data: "connect" },
+        { text: "Отключить", callback_data: `disable:${installation.id}` },
+      ],
+    ],
+  };
+}
+
+function styleCaption(installation: StreamerInstallation) {
+  return [
+    `<b>Оформление · ${escapeHtml(installation.channelTitle)}</b>`,
+    `Сейчас: <b>${STYLE_LABELS[installation.style]}</b>`,
+    "",
+    "Выберите вариант ниже. OBS обновится сразу — ссылку менять не нужно.",
+  ].join("\n");
+}
+
+function styleKeyboard(installation: StreamerInstallation) {
+  return {
+    inline_keyboard: [
+      [
         { text: `${installation.style === "graphite" ? "✓ " : ""}Графит`, callback_data: `style:${installation.id}:graphite` },
         { text: `${installation.style === "paper" ? "✓ " : ""}Светлый`, callback_data: `style:${installation.id}:paper` },
       ],
       [{ text: `${installation.style === "mono" ? "✓ " : ""}Только текст`, callback_data: `style:${installation.id}:mono` }],
       [
-        { text: "Проверить уведомление", callback_data: `test:${installation.id}` },
-        { text: "Скопировать OBS-ссылку", copy_text: { text: overlayUrl(baseUrl, installation) } },
-      ],
-      [
-        { text: "Подключить ещё группу или канал", callback_data: "connect" },
-        { text: "Отключить", callback_data: `disable:${installation.id}` },
+        { text: "Проверить в OBS", callback_data: `test:${installation.id}` },
+        { text: "← Вернуться к панели", callback_data: `channel:${installation.id}` },
       ],
     ],
   };
@@ -134,6 +155,16 @@ async function sendInstallationPanel(chatId: number | string, installation: Stre
     text: installationPanelText(installation, baseUrl),
     parse_mode: "HTML",
     reply_markup: installationKeyboard(installation, baseUrl),
+  });
+}
+
+async function sendStylePanel(chatId: number | string, installation: StreamerInstallation, baseUrl: string) {
+  await telegramCall("sendPhoto", {
+    chat_id: chatId,
+    photo: `${baseUrl}/style-preview.png?v=1`,
+    caption: styleCaption(installation),
+    parse_mode: "HTML",
+    reply_markup: styleKeyboard(installation),
   });
 }
 
@@ -176,6 +207,11 @@ async function sendHome(chatId: number, owner: TelegramUser, baseUrl: string) {
     return;
   }
 
+  if (installations.length === 1) {
+    await sendInstallationPanel(chatId, installations[0], baseUrl);
+    return;
+  }
+
   await telegramCall("sendMessage", {
     chat_id: chatId,
     text: "Ваши оверлеи. Выберите чат или подключите новый.",
@@ -189,10 +225,29 @@ async function sendHome(chatId: number, owner: TelegramUser, baseUrl: string) {
       ],
     },
   });
+}
 
-  if (installations.length === 1) {
-    await sendInstallationPanel(chatId, installations[0], baseUrl);
+async function sendStyleHome(chatId: number, owner: TelegramUser, baseUrl: string) {
+  const installations = await listInstallationsByOwner(String(owner.id));
+  if (!installations.length) {
+    await sendConnectPrompt(chatId, owner);
+    return;
   }
+  if (installations.length === 1) {
+    await sendStylePanel(chatId, installations[0], baseUrl);
+    return;
+  }
+
+  await telegramCall("sendMessage", {
+    chat_id: chatId,
+    text: "Для какого чата меняем оформление?",
+    reply_markup: {
+      inline_keyboard: installations.map((installation) => [{
+        text: installation.channelTitle,
+        callback_data: `style-menu:${installation.id}`,
+      }]),
+    },
+  });
 }
 
 async function ownedInstallation(id: string, ownerUserId: string) {
@@ -245,7 +300,30 @@ export async function POST(request: Request) {
       return Response.json({ ok: true, forbidden: true });
     }
     await telegramCall("answerCallbackQuery", { callback_query_id: callback.id });
+    if (callback.message) {
+      await telegramCall("deleteMessage", {
+        chat_id: callback.message.chat.id,
+        message_id: callback.message.message_id,
+      }).catch(() => null);
+    }
     await sendInstallationPanel(callback.from.id, installation, baseUrl);
+    return Response.json({ ok: true, installation });
+  }
+
+  if (callback?.data?.startsWith("style-menu:")) {
+    const installation = await ownedInstallation(callback.data.slice("style-menu:".length), String(callback.from.id));
+    if (!installation) {
+      await answerUnauthorized(callback.id);
+      return Response.json({ ok: true, forbidden: true });
+    }
+    await telegramCall("answerCallbackQuery", { callback_query_id: callback.id });
+    if (callback.message) {
+      await telegramCall("deleteMessage", {
+        chat_id: callback.message.chat.id,
+        message_id: callback.message.message_id,
+      }).catch(() => null);
+    }
+    await sendStylePanel(callback.from.id, installation, baseUrl);
     return Response.json({ ok: true, installation });
   }
 
@@ -268,13 +346,23 @@ export async function POST(request: Request) {
       text: `Выбран стиль «${STYLE_LABELS[settings.style]}»`,
     });
     if (callback.message) {
-      await telegramCall("editMessageText", {
-        chat_id: callback.message.chat.id,
-        message_id: callback.message.message_id,
-        text: installationPanelText(updated, baseUrl),
-        parse_mode: "HTML",
-        reply_markup: installationKeyboard(updated, baseUrl),
-      });
+      if (callback.message.photo?.length) {
+        await telegramCall("editMessageCaption", {
+          chat_id: callback.message.chat.id,
+          message_id: callback.message.message_id,
+          caption: styleCaption(updated),
+          parse_mode: "HTML",
+          reply_markup: styleKeyboard(updated),
+        });
+      } else {
+        await telegramCall("editMessageText", {
+          chat_id: callback.message.chat.id,
+          message_id: callback.message.message_id,
+          text: installationPanelText(updated, baseUrl),
+          parse_mode: "HTML",
+          reply_markup: installationKeyboard(updated, baseUrl),
+        });
+      }
     }
     return Response.json({ ok: true, settings, installation: updated });
   }
@@ -404,7 +492,13 @@ export async function POST(request: Request) {
     return Response.json({ ok: true, installation: result.installation });
   }
 
-  if (message?.text?.startsWith("/start") || message?.text?.startsWith("/panel") || message?.text?.startsWith("/style")) {
+  if (message?.text?.startsWith("/style")) {
+    const owner = message.from ?? { id: message.chat.id };
+    await sendStyleHome(message.chat.id, owner, baseUrl);
+    return Response.json({ ok: true });
+  }
+
+  if (message?.text?.startsWith("/start") || message?.text?.startsWith("/panel")) {
     const owner = message.from ?? { id: message.chat.id };
     await sendHome(message.chat.id, owner, baseUrl);
     return Response.json({ ok: true });

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -35,6 +36,12 @@ test("renders the OBS overlay", async () => {
   assert.match(html, /Последний подписчик/);
   assert.match(html, /Анна Смирнова/);
   assert.match(html, /data-style="graphite"/);
+});
+
+test("serves the style preview used inside Telegram", async () => {
+  const bytes = await readFile(new URL("../public/style-preview.png", import.meta.url));
+  assert.ok(bytes.byteLength > 40_000);
+  assert.deepEqual([...bytes.slice(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
 });
 
 test("start sends one message with working group and channel buttons", async () => {
@@ -231,4 +238,102 @@ test("self-service flow creates a private overlay, changes style and sends a tes
     headers: { accept: "application/json" },
   });
   assert.equal(privateSnapshot.status, 404);
+});
+
+test("panel stays compact and style shows visual choices in Telegram", async () => {
+  const ownerId = 505;
+  const connected = await request("/api/telegram/webhook", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      update_id: 80,
+      message: {
+        message_id: 12,
+        chat: { id: ownerId, type: "private" },
+        from: { id: ownerId, first_name: "Дарина" },
+        chat_shared: { request_id: 73002, chat_id: -100800, title: "ffdfd" },
+      },
+    }),
+  });
+  assert.equal(connected.status, 200);
+  const installation = (await connected.json()).installation;
+
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  process.env.BOT_TOKEN = "test-token";
+  globalThis.fetch = async (input, init) => {
+    const url = String(input);
+    if (!url.startsWith("https://api.telegram.org/")) return originalFetch(input, init);
+    const method = new URL(url).pathname.split("/").at(-1);
+    const body = JSON.parse(init?.body || "{}");
+    calls.push({ method, body });
+    return Response.json({ ok: true, result: method === "sendMessage" || method === "sendPhoto" ? { message_id: 902 } : true });
+  };
+
+  try {
+    const panel = await request("/api/telegram/webhook", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        update_id: 81,
+        message: {
+          message_id: 13,
+          text: "/panel",
+          chat: { id: ownerId, type: "private" },
+          from: { id: ownerId, first_name: "Дарина" },
+        },
+      }),
+    });
+    assert.equal(panel.status, 200);
+    const panelMessages = calls.filter((call) => call.method === "sendMessage");
+    assert.equal(panelMessages.length, 1);
+    assert.match(panelMessages[0].body.text, /ffdfd/);
+    assert.doesNotMatch(panelMessages[0].body.text, /Ваши оверлеи/);
+    assert.equal(panelMessages[0].body.reply_markup.inline_keyboard[0][0].callback_data, `style-menu:${installation.id}`);
+
+    calls.length = 0;
+    const style = await request("/api/telegram/webhook", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        update_id: 82,
+        message: {
+          message_id: 14,
+          text: "/style",
+          chat: { id: ownerId, type: "private" },
+          from: { id: ownerId, first_name: "Дарина" },
+        },
+      }),
+    });
+    assert.equal(style.status, 200);
+    const preview = calls.find((call) => call.method === "sendPhoto");
+    assert.ok(preview);
+    assert.match(preview.body.photo, /\/style-preview\.png\?v=1$/);
+    assert.match(preview.body.caption, /Оформление · ffdfd/);
+    assert.match(preview.body.caption, /Сейчас: <b>Графит<\/b>/);
+    assert.equal(preview.body.reply_markup.inline_keyboard[0][0].text, "✓ Графит");
+
+    calls.length = 0;
+    const chooseStyle = await request("/api/telegram/webhook", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        update_id: 83,
+        callback_query: {
+          id: "style-photo",
+          from: { id: ownerId },
+          data: `style:${installation.id}:mono`,
+          message: { message_id: 902, chat: { id: ownerId, type: "private" }, photo: [{}] },
+        },
+      }),
+    });
+    assert.equal(chooseStyle.status, 200);
+    const edit = calls.find((call) => call.method === "editMessageCaption");
+    assert.ok(edit);
+    assert.match(edit.body.caption, /Сейчас: <b>Только текст<\/b>/);
+    assert.equal(edit.body.reply_markup.inline_keyboard[1][0].text, "✓ Только текст");
+  } finally {
+    globalThis.fetch = originalFetch;
+    delete process.env.BOT_TOKEN;
+  }
 });

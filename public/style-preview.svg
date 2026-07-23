@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+  <rect width="1200" height="900" rx="40" fill="#e9e9e6"/>
+
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <text x="64" y="60" fill="#5f5f5b" font-size="24" font-weight="600" letter-spacing="2">ГРАФИТ</text>
+    <rect x="64" y="84" width="1072" height="204" rx="32" fill="#171717" stroke="#373737" stroke-width="2"/>
+    <rect x="96" y="118" width="136" height="136" rx="34" fill="#30302f"/>
+    <text x="164" y="201" text-anchor="middle" fill="#ffffff" font-size="39" font-weight="700">АС</text>
+    <rect x="207" y="220" width="48" height="36" rx="12" fill="#269ed8" stroke="#171717" stroke-width="5"/>
+    <text x="231" y="244" text-anchor="middle" fill="#ffffff" font-size="17" font-weight="700">tg</text>
+    <circle cx="277" cy="137" r="7" fill="#686865"/>
+    <text x="298" y="144" fill="#9c9c98" font-size="20" font-weight="600" letter-spacing="2">ПОСЛЕДНИЙ ПОДПИСЧИК</text>
+    <text x="270" y="207" fill="#ffffff" font-size="48" font-weight="650">Анна Смирнова</text>
+    <text x="272" y="244" fill="#9c9c98" font-size="22">@annasmirnova</text>
+    <text x="1044" y="142" text-anchor="end" fill="#9c9c98" font-size="19">последний</text>
+
+    <text x="64" y="350" fill="#5f5f5b" font-size="24" font-weight="600" letter-spacing="2">СВЕТЛЫЙ</text>
+    <rect x="64" y="374" width="1072" height="204" rx="32" fill="#ffffff" stroke="#d0d0ca" stroke-width="2"/>
+    <rect x="96" y="408" width="136" height="136" rx="34" fill="#ededeb"/>
+    <text x="164" y="491" text-anchor="middle" fill="#242422" font-size="39" font-weight="700">АС</text>
+    <rect x="207" y="510" width="48" height="36" rx="12" fill="#269ed8" stroke="#ffffff" stroke-width="5"/>
+    <text x="231" y="534" text-anchor="middle" fill="#ffffff" font-size="17" font-weight="700">tg</text>
+    <circle cx="277" cy="427" r="7" fill="#74746f"/>
+    <text x="298" y="434" fill="#74746f" font-size="20" font-weight="600" letter-spacing="2">ПОСЛЕДНИЙ ПОДПИСЧИК</text>
+    <text x="270" y="497" fill="#161616" font-size="48" font-weight="650">Анна Смирнова</text>
+    <text x="272" y="534" fill="#74746f" font-size="22">@annasmirnova</text>
+    <text x="1044" y="432" text-anchor="end" fill="#74746f" font-size="19">последний</text>
+
+    <text x="64" y="640" fill="#5f5f5b" font-size="24" font-weight="600" letter-spacing="2">ТОЛЬКО ТЕКСТ</text>
+    <rect x="64" y="664" width="1072" height="172" rx="18" fill="#161616" fill-opacity="0.88"/>
+    <rect x="64" y="664" width="5" height="172" rx="2" fill="#ffffff"/>
+    <circle cx="104" cy="711" r="7" fill="#8f8f8c"/>
+    <text x="126" y="718" fill="#b8b8b4" font-size="20" font-weight="600" letter-spacing="2">ПОСЛЕДНИЙ ПОДПИСЧИК</text>
+    <text x="98" y="782" fill="#ffffff" font-size="48" font-weight="650">Анна Смирнова</text>
+    <text x="100" y="816" fill="#b8b8b4" font-size="22">@annasmirnova</text>
+    <text x="1086" y="714" text-anchor="end" fill="#b8b8b4" font-size="19">последний</text>
+  </g>
+</svg>
