@@ -55,7 +55,7 @@ export function SubscriberCard({
   const name = subscriber?.name ?? "Ждём нового подписчика";
   const nameLength = Array.from(name).length;
   const nameClass = nameLength > 44 ? "is-very-long" : nameLength > 26 ? "is-long" : "";
-  const waveSource = `/mascot-wave.gif?v=2&event=${subscriber?.sequence ?? 0}`;
+  const waveSource = `/mascot-wave.gif?v=3&event=${subscriber?.sequence ?? 0}`;
 
   return (
     <div className="subscriber-wrap" data-style={style} data-waiting={waiting || undefined} data-testid="subscriber-design">

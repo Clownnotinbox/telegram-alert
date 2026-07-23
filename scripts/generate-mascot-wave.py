@@ -64,15 +64,17 @@ def main() -> None:
     # The shoulder and elbow stay registered. The wrist moves through two small
     # arcs with longer holds at the extremes for a natural slow-in/slow-out loop.
     # The broadest generated pose is intentionally omitted to keep the gesture calm.
-    sequence = [frames[index] for index in (0, 1, 2, 1, 0, 3, 5, 3)]
+    sequence = [frames[index] for index in (0, 1, 2, 1, 0, 3, 5, 3, 0)]
     prepared = gif_frames(sequence)
+    if prepared[0].tobytes() != prepared[-1].tobytes():
+        raise ValueError("The final pose must match the static first pose exactly")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     prepared[0].save(
         args.output,
         save_all=True,
         append_images=prepared[1:],
-        duration=[160, 90, 190, 90, 130, 110, 190, 140],
-        loop=0,
+        duration=[160, 90, 190, 90, 130, 110, 190, 140, 500],
+        loop=3,
         transparency=255,
         disposal=2,
         optimize=False,

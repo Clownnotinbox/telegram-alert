@@ -26,10 +26,10 @@ const mascot = await sharp(mascotPath)
 
 await sharp(source)
   .composite([
-    { input: qr, left: 444, top: 438 },
     { input: qr, left: 1024, top: 438 },
-    { input: animeQr, left: 662, top: 1080 },
-    { input: mascot, left: 814, top: 700 },
+    { input: qr, left: 444, top: 1046 },
+    { input: animeQr, left: 82, top: 472 },
+    { input: mascot, left: 234, top: 92 },
   ])
   .png({ compressionLevel: 9 })
   .toFile(output);
