@@ -1,7 +1,7 @@
 import type { Pool, QueryResultRow } from "pg";
 import { runtimeEnv } from "./runtime-env";
 
-export const OVERLAY_STYLES = ["graphite", "paper", "mono", "anime", "anime_static"] as const;
+export const OVERLAY_STYLES = ["graphite", "paper", "mono", "anime"] as const;
 export type OverlayStyle = (typeof OVERLAY_STYLES)[number];
 
 export type OverlaySettings = {
@@ -109,13 +109,19 @@ export function isOverlayStyle(value: unknown): value is OverlayStyle {
   return typeof value === "string" && OVERLAY_STYLES.includes(value as OverlayStyle);
 }
 
+function normalizeOverlayStyle(value: unknown): OverlayStyle {
+  // Existing installations may still contain the retired static/animated split.
+  if (value === "anime_static") return "anime";
+  return isOverlayStyle(value) ? value : DEFAULT_OVERLAY_SETTINGS.style;
+}
+
 function toIso(value: string | Date) {
   return new Date(value).toISOString();
 }
 
 function mapSettingsRow(row: SettingsRow): OverlaySettings {
   return {
-    style: isOverlayStyle(row.style) ? row.style : DEFAULT_OVERLAY_SETTINGS.style,
+    style: normalizeOverlayStyle(row.style),
     version: Number(row.version),
     updatedAt: toIso(row.updated_at),
   };
@@ -143,7 +149,7 @@ function mapInstallationRow(row: InstallationRow): StreamerInstallation {
     channelTitle: row.channel_title,
     channelUsername: row.channel_username,
     overlayKey: row.overlay_key,
-    style: isOverlayStyle(row.style) ? row.style : DEFAULT_OVERLAY_SETTINGS.style,
+    style: normalizeOverlayStyle(row.style),
     version: Number(row.version),
     active: Boolean(row.active),
     createdAt: toIso(row.created_at),

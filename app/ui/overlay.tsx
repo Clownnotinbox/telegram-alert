@@ -41,12 +41,24 @@ function playGentleChime() {
   }
 }
 
-export function Overlay({ preview, overlayKey }: { preview: boolean; overlayKey: string | null }) {
-  const [subscriber, setSubscriber] = useState<Subscriber | null>(preview ? DEMO_SUBSCRIBER : null);
+export function Overlay({
+  preview,
+  overlayKey,
+  previewName,
+  previewPhase,
+}: {
+  preview: boolean;
+  overlayKey: string | null;
+  previewName: string | null;
+  previewPhase: "exit" | "enter" | null;
+}) {
+  const [subscriber, setSubscriber] = useState<Subscriber | null>(
+    preview ? { ...DEMO_SUBSCRIBER, name: previewName?.trim() || DEMO_SUBSCRIBER.name } : null,
+  );
   const [community, setCommunity] = useState<OverlayCommunity | null>(
     preview ? { title: "Даринино сообщество", url: "https://t.me/xedat1va" } : null,
   );
-  const [phase, setPhase] = useState<"idle" | "exit" | "enter">("idle");
+  const [phase, setPhase] = useState<"idle" | "exit" | "enter">(preview && previewPhase ? previewPhase : "idle");
   const [celebrating, setCelebrating] = useState(false);
   const [queue, setQueue] = useState<Subscriber[]>([]);
   const [style, setStyle] = useState<OverlayStyle>("anime");
@@ -69,7 +81,7 @@ export function Overlay({ preview, overlayKey }: { preview: boolean; overlayKey:
           if (!preview) setCommunity(data.community);
           if (!initialized.current) {
             initialized.current = true;
-            if (data.latest) setSubscriber(data.latest);
+            if (data.latest && !(preview && previewName)) setSubscriber(data.latest);
             cursor.current = data.latest?.sequence ?? 0;
           } else if (data.events.length) {
             cursor.current = Math.max(cursor.current, ...data.events.map((event) => event.sequence));
@@ -88,7 +100,7 @@ export function Overlay({ preview, overlayKey }: { preview: boolean; overlayKey:
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [overlayKey, preview]);
+  }, [overlayKey, preview, previewName]);
 
   useEffect(() => {
     if (animating.current || queue.length === 0) return;
@@ -101,12 +113,12 @@ export function Overlay({ preview, overlayKey }: { preview: boolean; overlayKey:
       setCelebrating(true);
       setPhase("enter");
       playGentleChime();
-    }, 260);
+    }, 420);
     const settleTimer = setTimeout(() => {
       setPhase("idle");
       animating.current = false;
       setQueue((current) => current.slice(1));
-    }, 960);
+    }, 1120);
     const toastTimer = setTimeout(() => setCelebrating(false), 8000);
     animationTimers.current = [swapTimer, settleTimer, toastTimer];
   }, [queue]);

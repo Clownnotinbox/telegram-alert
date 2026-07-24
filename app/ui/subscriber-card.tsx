@@ -4,11 +4,13 @@
 /* eslint-disable @next/next/no-img-element */
 
 import QRCode from "qrcode";
+import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { OverlayCommunity, OverlayStyle, Subscriber } from "./types";
 
 const ANIME_QR_URL = "https://t.me/xedat1va";
-const MASCOT_ASSET_VERSION = 5;
+const MASCOT_ASSET_VERSION = 6;
+const IDENTITY_PIXELS = Array.from({ length: 48 }, (_, index) => index);
 
 function initials(name: string) {
   return name
@@ -25,7 +27,7 @@ function QrMark({ value, themed = false }: { value: string; themed?: boolean }) 
   useEffect(() => {
     if (!canvas.current) return;
     void QRCode.toCanvas(canvas.current, value, {
-      width: 132,
+      width: themed ? 148 : 132,
       margin: 1,
       errorCorrectionLevel: themed ? "H" : "M",
       color: themed
@@ -52,16 +54,15 @@ export function SubscriberCard({
 }) {
   const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
 
-  const animeLike = style === "anime" || style === "anime_static";
-  const animatedAnime = style === "anime";
+  const animeLike = style === "anime";
   const waiting = !subscriber;
   const name = subscriber?.name ?? "Ждём нового подписчика";
   const nameLength = Array.from(name).length;
-  const nameClass = nameLength > 38 ? "is-very-long" : nameLength > 22 ? "is-long" : "";
-  const waveSource = `/mascot-wave.gif?v=${MASCOT_ASSET_VERSION}&event=${subscriber?.sequence ?? 0}`;
-  const stillSource = style === "anime_static"
-    ? `/mascot-anime-static.png?v=${MASCOT_ASSET_VERSION}`
-    : `/mascot-anime.png?v=${MASCOT_ASSET_VERSION}`;
+  const nameClass = [
+    nameLength <= 8 ? "is-short" : "",
+    nameLength > 22 ? "is-long" : "",
+    nameLength > 38 ? "is-very-long" : "",
+  ].filter(Boolean).join(" ");
 
   return (
     <div className="subscriber-wrap" data-style={style} data-waiting={waiting || undefined} data-testid="subscriber-design">
@@ -71,13 +72,8 @@ export function SubscriberCard({
         <span className="frame-corner frame-corner-bl" aria-hidden="true" />
         <span className="frame-corner frame-corner-br" aria-hidden="true" />
 
-        <div className={`anime-mascot ${animatedAnime && celebrating ? "is-celebrating" : ""}`} aria-hidden="true">
-          {/* Both original mascot assets are generated locally; no external image host is used. */}
-          <img className="mascot-still" src={stillSource} alt="" />
-          {animatedAnime && celebrating && <img className="mascot-wave" src={waveSource} alt="" />}
-          {animatedAnime && <span className="mascot-spark spark-one">✦</span>}
-          {animatedAnime && <span className="mascot-spark spark-two">✦</span>}
-          {animatedAnime && <span className="mascot-spark spark-three">·</span>}
+        <div className="anime-mascot" aria-hidden="true">
+          <img className="mascot-still" src={`/mascot-anime-static.png?v=${MASCOT_ASSET_VERSION}`} alt="" />
         </div>
 
         <div className="subscriber-identity">
@@ -99,6 +95,18 @@ export function SubscriberCard({
               </div>
             )}
             <h2 className={`subscriber-name ${nameClass}`}>{name}</h2>
+          </div>
+          <div className="identity-pixels" aria-hidden="true">
+            {IDENTITY_PIXELS.map((pixel) => (
+              <i
+                key={pixel}
+                style={{
+                  "--pixel-out-delay": `${(pixel % 12) * 7}ms`,
+                  "--pixel-in-delay": `${(11 - (pixel % 12)) * 6}ms`,
+                  "--pixel-drift": `${((pixel * 7) % 13) - 6}px`,
+                } as CSSProperties}
+              />
+            ))}
           </div>
         </div>
 
