@@ -296,6 +296,22 @@ test("self-service flow creates a private overlay, changes style and sends a tes
   assert.equal(forbidden.status, 200);
   assert.equal((await forbidden.json()).forbidden, true);
 
+  const realJoin = await request("/api/telegram/webhook", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      update_id: 46,
+      message: {
+        message_id: 8,
+        date: 1_700_000_100,
+        chat: { id: -100500, type: "supergroup", title: "Test channel", username: "test_channel" },
+        new_chat_members: [{ id: 777, first_name: "Real", last_name: "Subscriber" }],
+      },
+    }),
+  });
+  assert.equal(realJoin.status, 200);
+  assert.equal((await realJoin.json()).subscribers[0].name, "Real Subscriber");
+
   const testAlert = await request("/api/telegram/webhook", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -305,7 +321,9 @@ test("self-service flow creates a private overlay, changes style and sends a tes
     }),
   });
   assert.equal(testAlert.status, 200);
-  assert.equal((await testAlert.json()).event.installationId, installation.id);
+  const testEvent = (await testAlert.json()).event;
+  assert.equal(testEvent.installationId, installation.id);
+  assert.equal(testEvent.source, "telegram-test");
 
   const snapshot = await request(`/api/subscribers?after=0&key=${installation.overlayKey}`, {
     headers: { accept: "application/json" },
@@ -314,7 +332,20 @@ test("self-service flow creates a private overlay, changes style and sends a tes
   const snapshotBody = await snapshot.json();
   assert.equal(snapshotBody.settings.style, "paper");
   assert.equal(snapshotBody.latest.installationId, installation.id);
+  assert.equal(snapshotBody.latest.name, "Real Subscriber");
+  assert.equal(snapshotBody.latest.source, "telegram-group-service");
+  assert.ok(snapshotBody.cursor >= testEvent.sequence);
+  assert.ok(snapshotBody.events.some((event) => event.sequence === testEvent.sequence));
   assert.deepEqual(snapshotBody.community, { title: "Test channel", url: "https://t.me/test_channel" });
+
+  const caughtUp = await request(
+    `/api/subscribers?after=${snapshotBody.cursor}&key=${installation.overlayKey}`,
+    { headers: { accept: "application/json" } },
+  );
+  assert.equal(caughtUp.status, 200);
+  const caughtUpBody = await caughtUp.json();
+  assert.equal(caughtUpBody.latest.name, "Real Subscriber");
+  assert.deepEqual(caughtUpBody.events, []);
 
   const privateSnapshot = await request("/api/subscribers?after=0&key=wrong-key", {
     headers: { accept: "application/json" },

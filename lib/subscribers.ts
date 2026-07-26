@@ -527,15 +527,16 @@ export async function installationHasSubscriber(installationId: string, external
 }
 
 export async function subscriberSnapshot(after: number, installationId: string | null = null) {
+  const persistentSourceFilter = "source NOT IN ('telegram-test', 'test')";
   const pool = await postgresPool();
   if (pool) {
     const filter = installationId ? "installation_id = $1" : "installation_id IS NULL";
     const values = installationId ? [installationId] : [];
     const afterPosition = installationId ? "$2" : "$1";
-    const [latestResult, eventsResult, settings] = await Promise.all([
+    const [latestResult, eventsResult, cursorResult, settings] = await Promise.all([
       pool.query<SubscriberRow>(
         `SELECT sequence, installation_id, external_id, display_name, username, avatar_url, joined_at, source
-         FROM subscriber_events WHERE ${filter} ORDER BY sequence DESC LIMIT 1`,
+         FROM subscriber_events WHERE ${filter} AND ${persistentSourceFilter} ORDER BY sequence DESC LIMIT 1`,
         values,
       ),
       pool.query<SubscriberRow>(
@@ -543,11 +544,16 @@ export async function subscriberSnapshot(after: number, installationId: string |
          FROM subscriber_events WHERE ${filter} AND sequence > ${afterPosition} ORDER BY sequence ASC LIMIT 25`,
         [...values, after],
       ),
+      pool.query<{ sequence: number | string }>(
+        `SELECT COALESCE(MAX(sequence), 0) AS sequence FROM subscriber_events WHERE ${filter}`,
+        values,
+      ),
       getOverlaySettings(installationId),
     ]);
     return {
       latest: latestResult.rows[0] ? mapSubscriberRow(latestResult.rows[0]) : null,
       events: eventsResult.rows.map(mapSubscriberRow),
+      cursor: Number(cursorResult.rows[0]?.sequence ?? 0),
       settings,
     };
   }
@@ -557,28 +563,35 @@ export async function subscriberSnapshot(after: number, installationId: string |
     const filter = installationId ? "installation_id = ?" : "installation_id IS NULL";
     const latestStatement = db.prepare(
       `SELECT sequence, installation_id, external_id, display_name, username, avatar_url, joined_at, source
-       FROM subscriber_events WHERE ${filter} ORDER BY sequence DESC LIMIT 1`,
+       FROM subscriber_events WHERE ${filter} AND ${persistentSourceFilter} ORDER BY sequence DESC LIMIT 1`,
     );
     const eventsStatement = db.prepare(
       `SELECT sequence, installation_id, external_id, display_name, username, avatar_url, joined_at, source
        FROM subscriber_events WHERE ${filter} AND sequence > ? ORDER BY sequence ASC LIMIT 25`,
     );
-    const [latest, events, settings] = await Promise.all([
+    const cursorStatement = db.prepare(
+      `SELECT COALESCE(MAX(sequence), 0) AS sequence FROM subscriber_events WHERE ${filter}`,
+    );
+    const [latest, events, cursor, settings] = await Promise.all([
       (installationId ? latestStatement.bind(installationId) : latestStatement).first<SubscriberRow>(),
       (installationId ? eventsStatement.bind(installationId, after) : eventsStatement.bind(after)).all<SubscriberRow>(),
+      (installationId ? cursorStatement.bind(installationId) : cursorStatement).first<{ sequence: number | string }>(),
       getOverlaySettings(installationId),
     ]);
     return {
       latest: latest ? mapSubscriberRow(latest) : null,
       events: (events.results ?? []).map(mapSubscriberRow),
+      cursor: Number(cursor?.sequence ?? 0),
       settings,
     };
   }
 
   const store = memoryEvents().filter((event) => event.installationId === installationId);
+  const persistent = store.filter((event) => event.source !== "telegram-test" && event.source !== "test");
   return {
-    latest: store.at(-1) ?? null,
+    latest: persistent.at(-1) ?? null,
     events: store.filter((event) => event.sequence > after).slice(0, 25),
+    cursor: store.at(-1)?.sequence ?? 0,
     settings: await getOverlaySettings(installationId),
   };
 }

@@ -13,6 +13,7 @@ import {
 type Snapshot = {
   latest: Subscriber | null;
   events: Subscriber[];
+  cursor: number;
   settings: OverlaySettings;
   community: OverlayCommunity | null;
 };
@@ -67,7 +68,13 @@ export function Overlay({
   const cursor = useRef(0);
   const initialized = useRef(false);
   const animating = useRef(false);
+  const subscriberRef = useRef<Subscriber | null>(subscriber);
+  const persistentSubscriber = useRef<Subscriber | null>(null);
   const animationTimers = useRef<Array<ReturnType<typeof setTimeout>>>([]);
+
+  useEffect(() => {
+    subscriberRef.current = subscriber;
+  }, [subscriber]);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,10 +88,11 @@ export function Overlay({
           const data = (await response.json()) as Snapshot;
           if (!preview) setStyle(data.settings.style);
           if (!preview) setCommunity(data.community);
+          if (!preview) persistentSubscriber.current = data.latest;
           if (!initialized.current) {
             initialized.current = true;
             if (data.latest && !(preview && previewName)) setSubscriber(data.latest);
-            cursor.current = data.latest?.sequence ?? 0;
+            cursor.current = data.cursor ?? data.latest?.sequence ?? 0;
           } else if (data.events.length) {
             cursor.current = Math.max(cursor.current, ...data.events.map((event) => event.sequence));
             setQueue((current) => [...current, ...data.events]);
@@ -122,7 +130,28 @@ export function Overlay({
       setQueue((current) => current.slice(1));
     }, 1700);
     const toastTimer = setTimeout(() => setCelebrating(false), 8000);
-    animationTimers.current = [swapTimer, settleTimer, toastTimer];
+    animationTimers.current.push(swapTimer, settleTimer, toastTimer);
+
+    if (next.source === "telegram-test" || next.source === "test") {
+      const restoreTimer = setTimeout(() => {
+        if (animating.current || subscriberRef.current?.sequence !== next.sequence) return;
+        animating.current = true;
+        setPhase("exit");
+        const restoreSwapTimer = setTimeout(() => {
+          setSubscriber(persistentSubscriber.current);
+          setCelebrating(false);
+          setPhase("enter");
+        }, 680);
+        const restoreSettleTimer = setTimeout(() => {
+          const restoredSequence = persistentSubscriber.current?.sequence ?? 0;
+          setPhase("idle");
+          animating.current = false;
+          setQueue((current) => current.filter((event) => event.sequence > restoredSequence));
+        }, 1700);
+        animationTimers.current.push(restoreSwapTimer, restoreSettleTimer);
+      }, 8000);
+      animationTimers.current.push(restoreTimer);
+    }
   }, [queue]);
 
   useEffect(() => () => {
