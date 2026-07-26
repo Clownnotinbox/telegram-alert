@@ -37,7 +37,7 @@ const animeForeground = Buffer.from(`
       <circle cx="109" cy="115" r="67" fill="#192b50" stroke="#10203d" stroke-width="4"/>
       <text x="109" y="124" text-anchor="middle" fill="#fff" font-size="29" font-weight="700">АС</text>
       <rect x="227" y="35" width="253" height="66" rx="19" fill="#10254c" fill-opacity=".9" stroke="#8ee8ff" stroke-opacity=".24"/>
-      <text x="245" y="78" fill="#fff" font-size="28" font-weight="720">Анна Смирнова</text>
+      <text x="245" y="79" fill="#fff" font-size="29" font-weight="720">Анна Смирнова</text>
     </g>
   </svg>
 `);

@@ -43,7 +43,7 @@
       <circle cx="109" cy="115" r="67" fill="#192b50" stroke="#10203d" stroke-width="4"/>
       <text x="109" y="124" text-anchor="middle" fill="#fff" font-size="29" font-weight="700">АС</text>
       <rect x="227" y="35" width="253" height="66" rx="19" fill="#10254c" fill-opacity="0.78" stroke="#8ee8ff" stroke-opacity="0.2"/>
-      <text x="245" y="78" fill="#fff" font-size="28" font-weight="720">Анна Смирнова</text>
+      <text x="245" y="79" fill="#fff" font-size="29" font-weight="720">Анна Смирнова</text>
       <rect x="23" y="258" width="229" height="229" rx="28" fill="#13264e" fill-opacity="0.92" stroke="#8febff" stroke-opacity="0.35"/>
       <rect x="36" y="271" width="203" height="203" rx="22" fill="url(#qrFrame)"/>
     </g>

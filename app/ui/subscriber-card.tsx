@@ -58,6 +58,10 @@ export function SubscriberCard({
   const waiting = !subscriber;
   const name = subscriber?.name ?? "Ждём нового подписчика";
   const nameLength = Array.from(name).length;
+  const animeNameSize = Math.max(19, Math.min(30, 33.5 - nameLength * 0.45));
+  const animeNameStyle = animeLike
+    ? { "--anime-name-size": `${animeNameSize.toFixed(1)}px` } as CSSProperties
+    : undefined;
   const nameClass = [
     nameLength <= 8 ? "is-short" : "",
     nameLength > 22 ? "is-long" : "",
@@ -94,7 +98,7 @@ export function SubscriberCard({
                 {celebrating ? "Новый подписчик" : waiting ? "Ожидаем подписчика" : "Последний подписчик"}
               </div>
             )}
-            <h2 className={`subscriber-name ${nameClass}`}>{name}</h2>
+            <h2 className={`subscriber-name ${nameClass}`} style={animeNameStyle}>{name}</h2>
           </div>
           <div className="identity-pixels" aria-hidden="true">
             {IDENTITY_PIXELS.map((pixel) => (
