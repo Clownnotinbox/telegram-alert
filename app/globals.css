@@ -888,19 +888,19 @@ a { -webkit-tap-highlight-color: transparent; }
   left: 20px;
   display: grid;
   width: 342px;
-  height: 88px;
-  grid-template-columns: 82px minmax(0, 248px);
+  height: 112px;
+  grid-template-columns: 106px minmax(0, 224px);
   gap: 12px;
   align-items: center;
 }
 
 .subscriber-wrap[data-style="anime"] .avatar-shell,
-.subscriber-wrap[data-style="anime"] .avatar { width: 74px; height: 74px; }
+.subscriber-wrap[data-style="anime"] .avatar { width: 98px; height: 98px; }
 
 .subscriber-wrap[data-style="anime"] .avatar-shell {
   display: grid;
-  width: 80px;
-  height: 80px;
+  width: 104px;
+  height: 104px;
   place-items: center;
   border-radius: 50%;
   background: conic-gradient(from 205deg, #64e8f1, #4969ca 34%, #8e62c9 58%, #ffb342 77%, #64e8f1);
@@ -910,7 +910,7 @@ a { -webkit-tap-highlight-color: transparent; }
   border: 3px solid #15284a;
   border-radius: 50%;
   background: linear-gradient(145deg, rgba(64,87,148,.92), rgba(18,33,70,.94));
-  font-size: 20px;
+  font-size: 24px;
   backdrop-filter: blur(8px);
 }
 .subscriber-wrap[data-style="anime"] .avatar-platform { display: none; }
@@ -924,13 +924,13 @@ a { -webkit-tap-highlight-color: transparent; }
   overflow: hidden;
   width: fit-content;
   min-width: 0;
-  max-width: 246px;
-  padding: 11px 13px 12px;
+  max-width: 224px;
+  padding: 12px 14px 13px;
   border: 1px solid rgba(142,232,255,.18);
   border-radius: 15px;
   background: linear-gradient(110deg, rgba(15,31,70,.74), rgba(19,52,78,.5));
   box-shadow: inset 0 1px rgba(255,255,255,.06), 0 10px 24px rgba(3,9,27,.18);
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 720;
   letter-spacing: -.025em;
   line-height: 1;
@@ -945,7 +945,7 @@ a { -webkit-tap-highlight-color: transparent; }
 }
 .subscriber-wrap[data-style="anime"] .subscriber-name.is-long,
 .subscriber-wrap[data-style="anime"] .subscriber-name.is-very-long {
-  font-size: 18px;
+  font-size: 20px;
 }
 
 .anime-mascot {
@@ -973,7 +973,7 @@ a { -webkit-tap-highlight-color: transparent; }
 .anime-qr {
   position: absolute;
   z-index: 3;
-  top: 164px;
+  top: 176px;
   left: 18px;
   display: grid;
   box-sizing: border-box;
