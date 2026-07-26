@@ -33,18 +33,18 @@ const animeForeground = Buffer.from(`
       </linearGradient>
     </defs>
     <g transform="translate(40 80)" font-family="Segoe UI, Arial, sans-serif">
-      <circle cx="99" cy="99" r="69" fill="url(#ring)"/>
-      <circle cx="99" cy="99" r="60" fill="#192b50" stroke="#10203d" stroke-width="4"/>
-      <text x="99" y="108" text-anchor="middle" fill="#fff" font-size="27" font-weight="700">АС</text>
-      <rect x="188" y="61" width="294" height="62" rx="19" fill="#10254c" fill-opacity=".9" stroke="#8ee8ff" stroke-opacity=".24"/>
-      <text x="206" y="101" fill="#fff" font-size="26" font-weight="720">Анна Смирнова</text>
+      <circle cx="99" cy="99" r="76" fill="url(#ring)"/>
+      <circle cx="99" cy="99" r="67" fill="#192b50" stroke="#10203d" stroke-width="4"/>
+      <text x="99" y="108" text-anchor="middle" fill="#fff" font-size="29" font-weight="700">АС</text>
+      <rect x="204" y="43" width="278" height="62" rx="19" fill="#10254c" fill-opacity=".9" stroke="#8ee8ff" stroke-opacity=".24"/>
+      <text x="222" y="83" fill="#fff" font-size="26" font-weight="720">Анна Смирнова</text>
     </g>
   </svg>
 `);
 
 await sharp(source)
   .composite([
-    { input: animeQr, left: 84, top: 343 },
+    { input: animeQr, left: 84, top: 359 },
     { input: staticMascot, left: 249, top: 191 },
     { input: animeForeground, left: 0, top: 0 },
     { input: qr, left: 694, top: 298 },
