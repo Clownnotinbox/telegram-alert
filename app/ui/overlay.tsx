@@ -115,12 +115,12 @@ export function Overlay({
       setCelebrating(true);
       setPhase("enter");
       playGentleChime();
-    }, 420);
+    }, 680);
     const settleTimer = setTimeout(() => {
       setPhase("idle");
       animating.current = false;
       setQueue((current) => current.slice(1));
-    }, 1120);
+    }, 1700);
     const toastTimer = setTimeout(() => setCelebrating(false), 8000);
     animationTimers.current = [swapTimer, settleTimer, toastTimer];
   }, [queue]);

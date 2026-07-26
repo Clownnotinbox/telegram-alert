@@ -494,7 +494,7 @@ a { -webkit-tap-highlight-color: transparent; }
 
 .frame-corner {
   position: absolute;
-  z-index: 3;
+  z-index: 7;
   width: 23px;
   height: 23px;
   border-color: color-mix(in srgb, var(--card-ink) 45%, transparent);
@@ -573,20 +573,20 @@ a { -webkit-tap-highlight-color: transparent; }
 .identity-pixels i:nth-child(4n) { background: color-mix(in srgb, var(--accent) 48%, var(--card-bg)); }
 
 .subscriber-card.phase-exit .subscriber-identity > :not(.identity-pixels) {
-  animation: identity-pixel-out .42s steps(7, end) both;
+  animation: identity-pixel-out .62s cubic-bezier(.4,0,.2,1) both;
 }
 
 .subscriber-card.phase-exit .identity-pixels i {
-  animation: pixel-scatter-out .42s cubic-bezier(.18,.75,.28,1) both;
+  animation: pixel-scatter-out .62s cubic-bezier(.22,.72,.25,1) both;
   animation-delay: var(--pixel-out-delay);
 }
 
 .subscriber-card.phase-enter .subscriber-identity > :not(.identity-pixels) {
-  animation: identity-pixel-in .58s steps(8, end) both;
+  animation: identity-pixel-in .88s cubic-bezier(.16,.78,.22,1) both;
 }
 
 .subscriber-card.phase-enter .identity-pixels i {
-  animation: pixel-rebuild .58s cubic-bezier(.16,.72,.22,1) both;
+  animation: pixel-rebuild .88s cubic-bezier(.16,.72,.22,1) both;
   animation-delay: var(--pixel-in-delay);
 }
 
@@ -883,24 +883,24 @@ a { -webkit-tap-highlight-color: transparent; }
 
 .subscriber-wrap[data-style="anime"] .subscriber-identity {
   position: absolute;
-  z-index: 5;
+  z-index: 6;
   top: 18px;
   left: 20px;
   display: grid;
   width: 342px;
-  height: 76px;
-  grid-template-columns: 72px minmax(0, 258px);
+  height: 88px;
+  grid-template-columns: 82px minmax(0, 248px);
   gap: 12px;
   align-items: center;
 }
 
 .subscriber-wrap[data-style="anime"] .avatar-shell,
-.subscriber-wrap[data-style="anime"] .avatar { width: 66px; height: 66px; }
+.subscriber-wrap[data-style="anime"] .avatar { width: 74px; height: 74px; }
 
 .subscriber-wrap[data-style="anime"] .avatar-shell {
   display: grid;
-  width: 72px;
-  height: 72px;
+  width: 80px;
+  height: 80px;
   place-items: center;
   border-radius: 50%;
   background: conic-gradient(from 205deg, #64e8f1, #4969ca 34%, #8e62c9 58%, #ffb342 77%, #64e8f1);
@@ -910,7 +910,7 @@ a { -webkit-tap-highlight-color: transparent; }
   border: 3px solid #15284a;
   border-radius: 50%;
   background: linear-gradient(145deg, rgba(64,87,148,.92), rgba(18,33,70,.94));
-  font-size: 18px;
+  font-size: 20px;
   backdrop-filter: blur(8px);
 }
 .subscriber-wrap[data-style="anime"] .avatar-platform { display: none; }
@@ -925,12 +925,12 @@ a { -webkit-tap-highlight-color: transparent; }
   width: fit-content;
   min-width: 0;
   max-width: 246px;
-  padding: 9px 12px 10px;
+  padding: 11px 13px 12px;
   border: 1px solid rgba(142,232,255,.18);
   border-radius: 15px;
   background: linear-gradient(110deg, rgba(15,31,70,.74), rgba(19,52,78,.5));
   box-shadow: inset 0 1px rgba(255,255,255,.06), 0 10px 24px rgba(3,9,27,.18);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 720;
   letter-spacing: -.025em;
   line-height: 1;
@@ -945,12 +945,12 @@ a { -webkit-tap-highlight-color: transparent; }
 }
 .subscriber-wrap[data-style="anime"] .subscriber-name.is-long,
 .subscriber-wrap[data-style="anime"] .subscriber-name.is-very-long {
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .anime-mascot {
   position: absolute;
-  z-index: 2;
+  z-index: 5;
   top: 50px;
   right: -35px;
   display: none;
@@ -972,13 +972,13 @@ a { -webkit-tap-highlight-color: transparent; }
 
 .anime-qr {
   position: absolute;
-  z-index: 4;
-  top: 148px;
+  z-index: 3;
+  top: 164px;
   left: 18px;
   display: grid;
   box-sizing: border-box;
-  width: 190px;
-  height: 190px;
+  width: 176px;
+  height: 176px;
   place-items: center;
   padding: 10px;
   border: 1px solid rgba(143,235,255,.28);
@@ -1004,8 +1004,8 @@ a { -webkit-tap-highlight-color: transparent; }
 }
 
 .anime-qr .community-qr {
-  width: 158px !important;
-  height: 158px !important;
+  width: 146px !important;
+  height: 146px !important;
   padding: 5px;
   border: 0;
   border-radius: 14px;
