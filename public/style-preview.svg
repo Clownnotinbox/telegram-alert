@@ -39,11 +39,11 @@
       <rect width="520" height="520" rx="34" fill="url(#animeBg)" stroke="#4c91a8" stroke-width="2"/>
       <rect width="520" height="520" rx="34" fill="url(#animeGlow)"/>
       <path d="M22 34V22Q22 16 28 16H46M498 34V22Q498 16 492 16H474M22 486V498Q22 504 28 504H46M498 486V498Q498 504 492 504H474" fill="none" stroke="#8cecff" stroke-opacity="0.78"/>
-      <circle cx="99" cy="99" r="76" fill="url(#avatarRing)"/>
-      <circle cx="99" cy="99" r="67" fill="#192b50" stroke="#10203d" stroke-width="4"/>
-      <text x="99" y="108" text-anchor="middle" fill="#fff" font-size="29" font-weight="700">АС</text>
-      <rect x="204" y="43" width="278" height="62" rx="19" fill="#10254c" fill-opacity="0.78" stroke="#8ee8ff" stroke-opacity="0.2"/>
-      <text x="222" y="83" fill="#fff" font-size="26" font-weight="720">Анна Смирнова</text>
+      <circle cx="109" cy="115" r="76" fill="url(#avatarRing)"/>
+      <circle cx="109" cy="115" r="67" fill="#192b50" stroke="#10203d" stroke-width="4"/>
+      <text x="109" y="124" text-anchor="middle" fill="#fff" font-size="29" font-weight="700">АС</text>
+      <rect x="227" y="35" width="253" height="66" rx="19" fill="#10254c" fill-opacity="0.78" stroke="#8ee8ff" stroke-opacity="0.2"/>
+      <text x="245" y="78" fill="#fff" font-size="28" font-weight="720">Анна Смирнова</text>
       <rect x="23" y="258" width="229" height="229" rx="28" fill="#13264e" fill-opacity="0.92" stroke="#8febff" stroke-opacity="0.35"/>
       <rect x="36" y="271" width="203" height="203" rx="22" fill="url(#qrFrame)"/>
     </g>

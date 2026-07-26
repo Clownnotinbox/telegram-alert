@@ -390,7 +390,7 @@ test("panel stays compact and style shows visual choices in Telegram", async () 
     assert.equal(style.status, 200);
     const preview = calls.find((call) => call.method === "sendPhoto");
     assert.ok(preview);
-    assert.match(preview.body.photo, /\/style-preview\.png\?v=13$/);
+    assert.match(preview.body.photo, /\/style-preview\.png\?v=14$/);
     assert.match(preview.body.caption, /Оформление · ffdfd/);
     assert.match(preview.body.caption, /Сейчас: <b>Аниме<\/b>/);
     assert.match(preview.body.reply_markup.inline_keyboard[0][0].text, /^✓ /);
