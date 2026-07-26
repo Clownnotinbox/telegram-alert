@@ -46,11 +46,13 @@ export function Overlay({
   overlayKey,
   previewName,
   previewPhase,
+  previewStyle,
 }: {
   preview: boolean;
   overlayKey: string | null;
   previewName: string | null;
   previewPhase: "exit" | "enter" | null;
+  previewStyle: OverlayStyle | null;
 }) {
   const [subscriber, setSubscriber] = useState<Subscriber | null>(
     preview ? { ...DEMO_SUBSCRIBER, name: previewName?.trim() || DEMO_SUBSCRIBER.name } : null,
@@ -61,7 +63,7 @@ export function Overlay({
   const [phase, setPhase] = useState<"idle" | "exit" | "enter">(preview && previewPhase ? previewPhase : "idle");
   const [celebrating, setCelebrating] = useState(false);
   const [queue, setQueue] = useState<Subscriber[]>([]);
-  const [style, setStyle] = useState<OverlayStyle>("anime");
+  const [style, setStyle] = useState<OverlayStyle>(preview && previewStyle ? previewStyle : "anime");
   const cursor = useRef(0);
   const initialized = useRef(false);
   const animating = useRef(false);

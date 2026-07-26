@@ -27,7 +27,7 @@ function QrMark({ value, themed = false }: { value: string; themed?: boolean }) 
   useEffect(() => {
     if (!canvas.current) return;
     void QRCode.toCanvas(canvas.current, value, {
-      width: themed ? 148 : 132,
+      width: themed ? 166 : 160,
       margin: 1,
       errorCorrectionLevel: themed ? "H" : "M",
       color: themed

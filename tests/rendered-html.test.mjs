@@ -40,6 +40,10 @@ test("renders the OBS overlay", async () => {
   assert.match(html, /data-style="anime"/);
   assert.match(html, /\/mascot-anime-static\.png\?v=6/);
   assert.doesNotMatch(html, /mascot-wave/);
+
+  const graphiteResponse = await request("/overlay?preview=1&style=graphite");
+  assert.equal(graphiteResponse.status, 200);
+  assert.match(await graphiteResponse.text(), /data-style="graphite"/);
 });
 
 test("a production overlay waits honestly instead of showing a demo subscriber", async () => {
@@ -386,7 +390,7 @@ test("panel stays compact and style shows visual choices in Telegram", async () 
     assert.equal(style.status, 200);
     const preview = calls.find((call) => call.method === "sendPhoto");
     assert.ok(preview);
-    assert.match(preview.body.photo, /\/style-preview\.png\?v=8$/);
+    assert.match(preview.body.photo, /\/style-preview\.png\?v=9$/);
     assert.match(preview.body.caption, /Оформление · ffdfd/);
     assert.match(preview.body.caption, /Сейчас: <b>Аниме<\/b>/);
     assert.match(preview.body.reply_markup.inline_keyboard[0][0].text, /^✓ /);
