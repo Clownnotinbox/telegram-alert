@@ -887,20 +887,20 @@ a { -webkit-tap-highlight-color: transparent; }
   top: 18px;
   left: 20px;
   display: grid;
-  width: 342px;
-  height: 112px;
-  grid-template-columns: 106px minmax(0, 224px);
-  gap: 12px;
+  width: 364px;
+  height: 124px;
+  grid-template-columns: 118px minmax(0, 232px);
+  gap: 14px;
   align-items: center;
 }
 
 .subscriber-wrap[data-style="anime"] .avatar-shell,
-.subscriber-wrap[data-style="anime"] .avatar { width: 98px; height: 98px; }
+.subscriber-wrap[data-style="anime"] .avatar { width: 110px; height: 110px; }
 
 .subscriber-wrap[data-style="anime"] .avatar-shell {
   display: grid;
-  width: 104px;
-  height: 104px;
+  width: 116px;
+  height: 116px;
   place-items: center;
   border-radius: 50%;
   background: conic-gradient(from 205deg, #64e8f1, #4969ca 34%, #8e62c9 58%, #ffb342 77%, #64e8f1);
@@ -924,7 +924,7 @@ a { -webkit-tap-highlight-color: transparent; }
   overflow: hidden;
   width: fit-content;
   min-width: 0;
-  max-width: 224px;
+  max-width: 232px;
   padding: 12px 14px 13px;
   border: 1px solid rgba(142,232,255,.18);
   border-radius: 15px;
@@ -973,7 +973,7 @@ a { -webkit-tap-highlight-color: transparent; }
 .anime-qr {
   position: absolute;
   z-index: 3;
-  top: 176px;
+  top: 186px;
   left: 18px;
   display: grid;
   box-sizing: border-box;
