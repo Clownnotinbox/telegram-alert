@@ -21,11 +21,23 @@ function initials(name: string) {
     .join("") || "TG";
 }
 
+/* The budget is roughly twice the plate the art reserves for the nickname, so
+   the line lands at ~90% of it whatever the name length: the condensed face
+   advances about half an em per character.  3:2 used to spend 740 of its 475px
+   plate, which read as a caption floating in an empty frame. */
 function noirNameSize(length: number, wide: boolean) {
-  const maxSize = wide ? 49 : 34;
+  const maxSize = wide ? 66 : 34;
   const minSize = wide ? 22 : 18;
-  const widthBudget = wide ? 740 : 610;
+  const widthBudget = wide ? 880 : 610;
   return Math.max(minSize, Math.min(maxSize, Math.floor(widthBudget / Math.max(length, 1))));
+}
+
+/* The rendered width of the line, which scrollWidth cannot report through the
+   overflow: clip the noir plates use. */
+function inkWidth(element: HTMLElement) {
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  return range.getBoundingClientRect().width;
 }
 
 function QrMark({
@@ -133,12 +145,14 @@ export function SubscriberCard({
   community,
   phase,
   celebrating,
+  labelFading,
   style,
 }: {
   subscriber: Subscriber | null;
   community: OverlayCommunity | null;
   phase: "idle" | "exit" | "enter";
   celebrating: boolean;
+  labelFading: boolean;
   style: OverlayStyle;
 }) {
   const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
@@ -160,6 +174,36 @@ export function SubscriberCard({
   const noirNameStyle = noirLike || noirWideLike
     ? { "--noir-name-size": `${noirNameSize(displayedNameLength, noirWideLike)}px` } as CSSProperties
     : undefined;
+  const nameRef = useRef<HTMLHeadingElement>(null);
+  const noirPlate = noirLike || noirWideLike;
+
+  /* noirNameSize assumes an average glyph, which is all the server can do — a
+     nickname of all «w» still overruns the plate the art draws, and there is
+     nowhere for it to spill.  Measure the real line and step down until it
+     fits, re-checking whenever OBS resizes the source. */
+  useEffect(() => {
+    const element = nameRef.current;
+    if (!element || !noirPlate) return;
+
+    const fit = () => {
+      const available = element.clientWidth;
+      if (!available) return;
+      const minSize = noirWideLike ? 22 : 18;
+      let size = noirNameSize(displayedNameLength, noirWideLike);
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        element.style.setProperty("--noir-name-size", `${size}px`);
+        const ink = inkWidth(element);
+        if (ink <= available || size <= minSize) return;
+        size = Math.max(minSize, Math.floor((size * available) / ink));
+      }
+    };
+
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [displayedName, displayedNameLength, noirPlate, noirWideLike]);
+
   const nameClass = [
     displayedNameLength <= 8 ? "is-short" : "",
     displayedNameLength > 22 ? "is-long" : "",
@@ -203,12 +247,12 @@ export function SubscriberCard({
 
           <div className="subscriber-copy">
             {!animeLike && (
-              <div className="subscriber-label">
+              <div className={`subscriber-label ${labelFading ? "is-swapping" : ""}`}>
                 <span className={`subscriber-indicator ${celebrating ? "is-live" : ""}`} />
                 {celebrating ? "Новый подписчик" : waiting ? "Ожидаем подписчика" : "Последний подписчик"}
               </div>
             )}
-            <h2 className={`subscriber-name ${nameClass}`} style={animeNameStyle ?? noirNameStyle}>{displayedName}</h2>
+            <h2 ref={nameRef} className={`subscriber-name ${nameClass}`} style={animeNameStyle ?? noirNameStyle}>{displayedName}</h2>
           </div>
           <div className="identity-pixels" aria-hidden="true">
             {IDENTITY_PIXELS.map((pixel) => (

@@ -18,6 +18,27 @@ type Snapshot = {
   community: OverlayCommunity | null;
 };
 
+/* Noir dissolves the nickname instead of cutting to the next one, so the swap
+   has to wait out the longer fade — otherwise the name changes while the old
+   one is still faintly on screen.  Both values follow the noir-signal-out /
+   noir-signal-in durations in globals.css; the other styles keep the faster
+   pixel-glitch timing they were built around. */
+const SWAP_TIMINGS = {
+  base: { swap: 300, settle: 1100 },
+  noir: { swap: 400, settle: 1300 },
+} as const;
+
+function swapTimings(style: OverlayStyle) {
+  return style === "noir" || style === "noir-wide" ? SWAP_TIMINGS.noir : SWAP_TIMINGS.base;
+}
+
+/* The caption above the nickname flips back on its own once the celebration is
+   over, and no card animation is running to cover that.  It is dimmed for the
+   last LABEL_FADE_MS instead, so the words are replaced while invisible — the
+   value matches the .subscriber-label transition in globals.css. */
+const CELEBRATION_MS = 8000;
+const LABEL_FADE_MS = 220;
+
 function playGentleChime() {
   if (typeof window === "undefined" || !new URLSearchParams(window.location.search).has("sound")) return;
   try {
@@ -71,18 +92,26 @@ export function Overlay({
   );
   const [phase, setPhase] = useState<"idle" | "exit" | "enter">(preview && previewPhase ? previewPhase : "idle");
   const [celebrating, setCelebrating] = useState(false);
+  const [labelFading, setLabelFading] = useState(false);
   const [queue, setQueue] = useState<Subscriber[]>([]);
   const [style, setStyle] = useState<OverlayStyle>(preview && previewStyle ? previewStyle : "noir");
   const cursor = useRef(0);
   const initialized = useRef(false);
   const animating = useRef(false);
   const subscriberRef = useRef<Subscriber | null>(subscriber);
+  const styleRef = useRef<OverlayStyle>(style);
   const persistentSubscriber = useRef<Subscriber | null>(null);
   const animationTimers = useRef<Array<ReturnType<typeof setTimeout>>>([]);
 
   useEffect(() => {
     subscriberRef.current = subscriber;
   }, [subscriber]);
+
+  /* Read through a ref: the running animation should keep the timing it started
+     with, even if the streamer switches styles halfway through it. */
+  useEffect(() => {
+    styleRef.current = style;
+  }, [style]);
 
   useEffect(() => {
     let cancelled = false;
@@ -124,6 +153,7 @@ export function Overlay({
     if (animating.current || queue.length === 0) return;
     animating.current = true;
     const next = queue[0];
+    const timings = swapTimings(styleRef.current);
     setPhase("exit");
 
     const swapTimer = setTimeout(() => {
@@ -131,33 +161,38 @@ export function Overlay({
       setCelebrating(true);
       setPhase("enter");
       playGentleChime();
-    }, 300);
+    }, timings.swap);
     const settleTimer = setTimeout(() => {
       setPhase("idle");
       animating.current = false;
       setQueue((current) => current.slice(1));
-    }, 1100);
-    const toastTimer = setTimeout(() => setCelebrating(false), 8000);
-    animationTimers.current.push(swapTimer, settleTimer, toastTimer);
+    }, timings.settle);
+    const labelFadeTimer = setTimeout(() => setLabelFading(true), CELEBRATION_MS - LABEL_FADE_MS);
+    const toastTimer = setTimeout(() => {
+      setCelebrating(false);
+      setLabelFading(false);
+    }, CELEBRATION_MS);
+    animationTimers.current.push(swapTimer, settleTimer, labelFadeTimer, toastTimer);
 
     if (next.source === "telegram-test" || next.source === "test") {
       const restoreTimer = setTimeout(() => {
         if (animating.current || subscriberRef.current?.sequence !== next.sequence) return;
         animating.current = true;
+        const restoreTimings = swapTimings(styleRef.current);
         setPhase("exit");
         const restoreSwapTimer = setTimeout(() => {
           setSubscriber(persistentSubscriber.current);
           setCelebrating(false);
           setPhase("enter");
-        }, 300);
+        }, restoreTimings.swap);
         const restoreSettleTimer = setTimeout(() => {
           const restoredSequence = persistentSubscriber.current?.sequence ?? 0;
           setPhase("idle");
           animating.current = false;
           setQueue((current) => current.filter((event) => event.sequence > restoredSequence));
-        }, 1100);
+        }, restoreTimings.settle);
         animationTimers.current.push(restoreSwapTimer, restoreSettleTimer);
-      }, 8000);
+      }, CELEBRATION_MS);
       animationTimers.current.push(restoreTimer);
     }
   }, [queue]);
@@ -173,6 +208,7 @@ export function Overlay({
         community={community}
         phase={phase}
         celebrating={celebrating}
+        labelFading={labelFading}
         style={style}
       />
     </main>

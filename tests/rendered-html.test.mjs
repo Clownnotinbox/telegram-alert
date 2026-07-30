@@ -53,7 +53,7 @@ test("renders the OBS overlay", async () => {
   const wideHtml = await wideResponse.text();
   assert.match(wideHtml, /data-style="noir-wide"/);
   assert.match(wideHtml, /\/noir-wide-source\.png\?v=1/);
-  assert.match(wideHtml, /--noir-name-size:49px/);
+  assert.match(wideHtml, /--noir-name-size:66px/);
   assert.doesNotMatch(wideHtml, /Открыть Telegram/);
 
   const longestUsername = "a".repeat(32);
@@ -65,7 +65,7 @@ test("renders the OBS overlay", async () => {
 
   const longWideResponse = await request(`/overlay?preview=1&style=noir-wide&username=${longestUsername}`);
   const longWideHtml = await longWideResponse.text();
-  assert.match(longWideHtml, /--noir-name-size:22px/);
+  assert.match(longWideHtml, /--noir-name-size:26px/);
 
   const fallbackName = "A".repeat(60);
   const fallbackResponse = await request(`/overlay?preview=1&style=noir&username=&name=${fallbackName}`);
@@ -109,6 +109,43 @@ test("noir nickname animation fades without shaking", async () => {
   assert.doesNotMatch(animationRules, /steps\(|noir-scanline/);
   assert.doesNotMatch(keyframes, /translate|skew|clip-path|transform\s*:/);
   assert.match(keyframes, /filter: blur/);
+  assert.doesNotMatch(keyframes, /brightness/, "a brightness ramp flashes the white nickname");
+});
+
+test("noir changes the nickname only while it is invisible", async () => {
+  const [css, overlay] = await Promise.all([
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/ui/overlay.tsx", import.meta.url), "utf8"),
+  ]);
+
+  const durationMs = (animation) => {
+    const match = new RegExp(`animation: ${animation} ([\\d.]+)s`).exec(css);
+    assert.ok(match, `globals.css must keep a duration for ${animation}`);
+    return Number(match[1]) * 1000;
+  };
+  const fadeOut = durationMs("noir-signal-out");
+  const fadeIn = durationMs("noir-signal-in");
+
+  const timings = /noir:\s*\{\s*swap:\s*(?<swap>\d+),\s*settle:\s*(?<settle>\d+)\s*\}/.exec(overlay);
+  assert.ok(timings, "overlay.tsx must keep separate swap timings for noir");
+  const swap = Number(timings.groups.swap);
+  const settle = Number(timings.groups.settle);
+
+  assert.ok(swap >= fadeOut, `swapping at ${swap}ms cuts the ${fadeOut}ms fade-out short`);
+  assert.ok(settle >= swap + fadeIn, `settling at ${settle}ms cuts the ${fadeIn}ms fade-in short`);
+});
+
+test("the caption is replaced while it is dimmed", async () => {
+  const [css, overlay] = await Promise.all([
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/ui/overlay.tsx", import.meta.url), "utf8"),
+  ]);
+
+  const dim = /\.subscriber-label\.is-swapping\s*\{[^}]*transition-duration:\s*([\d.]+)s/.exec(css);
+  assert.ok(dim, "globals.css must dim the caption before the words change");
+  const scheduled = /LABEL_FADE_MS = (\d+)/.exec(overlay);
+  assert.ok(scheduled, "overlay.tsx must schedule the caption fade");
+  assert.equal(Number(scheduled[1]), Number(dim[1]) * 1000, "the fade must end exactly when the caption flips");
 });
 
 test("ships only the original clean static anime mascot", async () => {

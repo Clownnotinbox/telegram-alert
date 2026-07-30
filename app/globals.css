@@ -646,6 +646,14 @@ a { -webkit-tap-highlight-color: transparent; }
   font-weight: 620;
   letter-spacing: .09em;
   text-transform: uppercase;
+  transition: opacity .3s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* Held at zero while the caption text is replaced underneath. */
+.subscriber-label.is-swapping {
+  opacity: 0;
+  transition-duration: .22s;
+  transition-timing-function: cubic-bezier(.4, 0, .6, 1);
 }
 
 .subscriber-indicator {
@@ -1062,9 +1070,9 @@ a { -webkit-tap-highlight-color: transparent; }
 }
 .subscriber-wrap[data-style="noir-wide"] .subscriber-label {
   margin-bottom: clamp(3px, .55vw, 8px);
-  color: rgba(255,255,255,.64);
+  color: rgba(255,255,255,.76);
   font-family: "Bahnschrift Condensed", "Arial Narrow", sans-serif;
-  font-size: clamp(8px, 1.02vw, 13px);
+  font-size: clamp(11px, 1.55vw, 20px);
   font-weight: 600;
   letter-spacing: .2em;
   text-shadow: 0 1px 7px #000;
@@ -1079,7 +1087,7 @@ a { -webkit-tap-highlight-color: transparent; }
   max-width: 100%;
   color: #fff;
   font-family: "Bahnschrift Condensed", "Arial Narrow", "Segoe UI", sans-serif;
-  font-size: min(var(--noir-name-size, 49px), 3.9vw);
+  font-size: min(var(--noir-name-size, 66px), 5.3vw);
   font-weight: 600;
   letter-spacing: .055em;
   line-height: .95;
@@ -1091,22 +1099,34 @@ a { -webkit-tap-highlight-color: transparent; }
   display: none;
 }
 
+/* The nickname keeps a no-op filter at rest, so it is rasterised the same way
+   before, during and after the swap.  Without it the text visibly snaps at the
+   end of the fade, when the animation class goes away and the element drops off
+   the filter path. */
+.subscriber-wrap[data-style="noir"] .subscriber-copy,
+.subscriber-wrap[data-style="noir-wide"] .subscriber-copy {
+  filter: blur(0);
+  will-change: opacity, filter;
+}
+
+/* Fade-out and fade-in share one duration and one curve with the rule below
+   them: two movements of different length read as a stumble, not as a swap. */
 .subscriber-wrap[data-style="noir"] .subscriber-card.phase-exit .subscriber-copy,
 .subscriber-wrap[data-style="noir-wide"] .subscriber-card.phase-exit .subscriber-copy {
-  animation: noir-signal-out .26s cubic-bezier(.4, 0, 1, 1) both;
+  animation: noir-signal-out .36s cubic-bezier(.4, 0, .6, 1) both;
 }
 
 .subscriber-wrap[data-style="noir"] .subscriber-card.phase-enter .subscriber-copy,
 .subscriber-wrap[data-style="noir-wide"] .subscriber-card.phase-enter .subscriber-copy {
-  animation: noir-signal-in .68s cubic-bezier(.22, 1, .36, 1) both;
+  animation: noir-signal-in .82s cubic-bezier(.4, 0, .2, 1) both;
 }
 
 .subscriber-wrap[data-style="noir"] .subscriber-card.phase-exit .subscriber-identity::after {
-  animation: noir-rule-out .22s ease-in both;
+  animation: noir-rule-out .36s cubic-bezier(.4, 0, .6, 1) both;
 }
 
 .subscriber-wrap[data-style="noir"] .subscriber-card.phase-enter .subscriber-identity::after {
-  animation: noir-rule-in .56s ease-out both;
+  animation: noir-rule-in .82s cubic-bezier(.4, 0, .2, 1) both;
 }
 
 .noir-wide-qr {
@@ -1362,29 +1382,28 @@ a { -webkit-tap-highlight-color: transparent; }
   100% { opacity: 0; transform: translate(0) scale(.35); }
 }
 
+/* Two stops only: an intermediate keyframe restarts the easing curve, and that
+   change of speed mid-fade is what reads as a jolt.  No brightness either — the
+   old fade-in started at 1.35 and flashed the white text before settling. */
 @keyframes noir-signal-out {
-  0% {
+  from {
     opacity: 1;
-    filter: blur(0) brightness(1);
+    filter: blur(0);
   }
-  100% {
+  to {
     opacity: 0;
-    filter: blur(2px) brightness(.86);
+    filter: blur(1.4px);
   }
 }
 
 @keyframes noir-signal-in {
-  0% {
+  from {
     opacity: 0;
-    filter: blur(5px) brightness(1.35);
+    filter: blur(2.4px);
   }
-  58% {
-    opacity: .9;
-    filter: blur(1px) brightness(1.06);
-  }
-  100% {
+  to {
     opacity: 1;
-    filter: blur(0) brightness(1);
+    filter: blur(0);
   }
 }
 
