@@ -944,6 +944,8 @@ a { -webkit-tap-highlight-color: transparent; }
   box-shadow: 0 0 7px rgba(255,255,255,.65);
 }
 .subscriber-wrap[data-style="noir"] .subscriber-name {
+  overflow-x: clip;
+  overflow-y: visible;
   max-width: 330px;
   color: #fff;
   font-family: "Bahnschrift Condensed", "Arial Narrow", "Segoe UI", sans-serif;
@@ -1072,6 +1074,8 @@ a { -webkit-tap-highlight-color: transparent; }
   box-shadow: 0 0 9px rgba(255,255,255,.8);
 }
 .subscriber-wrap[data-style="noir-wide"] .subscriber-name {
+  overflow-x: clip;
+  overflow-y: visible;
   max-width: 100%;
   color: #fff;
   font-family: "Bahnschrift Condensed", "Arial Narrow", "Segoe UI", sans-serif;
