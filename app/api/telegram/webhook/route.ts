@@ -184,7 +184,7 @@ async function sendInstallationPanel(chatId: number | string, installation: Stre
 async function sendStylePanel(chatId: number | string, installation: StreamerInstallation, baseUrl: string) {
   await telegramCall("sendPhoto", {
     chat_id: chatId,
-    photo: `${baseUrl}/style-preview.png?v=17`,
+    photo: `${baseUrl}/style-preview.png?v=18`,
     caption: styleCaption(installation),
     parse_mode: "HTML",
     reply_markup: styleKeyboard(installation),

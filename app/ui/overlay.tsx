@@ -46,17 +46,25 @@ export function Overlay({
   preview,
   overlayKey,
   previewName,
+  previewUsername,
   previewPhase,
   previewStyle,
 }: {
   preview: boolean;
   overlayKey: string | null;
   previewName: string | null;
+  previewUsername: string | null | undefined;
   previewPhase: "exit" | "enter" | null;
   previewStyle: OverlayStyle | null;
 }) {
   const [subscriber, setSubscriber] = useState<Subscriber | null>(
-    preview ? { ...DEMO_SUBSCRIBER, name: previewName?.trim() || DEMO_SUBSCRIBER.name } : null,
+    preview
+      ? {
+          ...DEMO_SUBSCRIBER,
+          name: previewName?.trim() || DEMO_SUBSCRIBER.name,
+          username: previewUsername === undefined ? DEMO_SUBSCRIBER.username : previewUsername,
+        }
+      : null,
   );
   const [community, setCommunity] = useState<OverlayCommunity | null>(
     preview ? { title: "Даринино сообщество", url: "https://t.me/xedat1va" } : null,

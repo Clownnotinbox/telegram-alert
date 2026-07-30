@@ -21,6 +21,21 @@ function initials(name: string) {
     .join("") || "TG";
 }
 
+function noirNameSize(length: number, wide: boolean) {
+  if (wide) {
+    if (length <= 14) return 46;
+    if (length <= 20) return 41;
+    if (length <= 26) return 36;
+    if (length <= 34) return 31;
+    return 28;
+  }
+  if (length <= 14) return 34;
+  if (length <= 20) return 30;
+  if (length <= 26) return 27;
+  if (length <= 34) return 24;
+  return 22;
+}
+
 function QrMark({
   value,
   theme = "default",
@@ -150,6 +165,9 @@ export function SubscriberCard({
   const animeNameStyle = animeLike
     ? { "--anime-name-size": `${animeNameSize.toFixed(1)}px` } as CSSProperties
     : undefined;
+  const noirNameStyle = noirLike || noirWideLike
+    ? { "--noir-name-size": `${noirNameSize(displayedNameLength, noirWideLike)}px` } as CSSProperties
+    : undefined;
   const nameClass = [
     displayedNameLength <= 8 ? "is-short" : "",
     displayedNameLength > 22 ? "is-long" : "",
@@ -198,7 +216,7 @@ export function SubscriberCard({
                 {celebrating ? "Новый подписчик" : waiting ? "Ожидаем подписчика" : "Последний подписчик"}
               </div>
             )}
-            <h2 className={`subscriber-name ${nameClass}`} style={animeNameStyle}>{displayedName}</h2>
+            <h2 className={`subscriber-name ${nameClass}`} style={animeNameStyle ?? noirNameStyle}>{displayedName}</h2>
           </div>
           <div className="identity-pixels" aria-hidden="true">
             {IDENTITY_PIXELS.map((pixel) => (

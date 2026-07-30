@@ -55,6 +55,23 @@ test("renders the OBS overlay", async () => {
   assert.match(wideHtml, /\/noir-wide-source\.png\?v=1/);
   assert.doesNotMatch(wideHtml, /Открыть Telegram/);
 
+  const longestUsername = "a".repeat(32);
+  const longMainResponse = await request(`/overlay?preview=1&style=noir&username=${longestUsername}`);
+  const longMainHtml = await longMainResponse.text();
+  assert.match(longMainHtml, new RegExp(`@${longestUsername}`));
+  assert.match(longMainHtml, /--noir-name-size:24px/);
+  assert.match(longMainHtml, /is-long/);
+
+  const longWideResponse = await request(`/overlay?preview=1&style=noir-wide&username=${longestUsername}`);
+  const longWideHtml = await longWideResponse.text();
+  assert.match(longWideHtml, /--noir-name-size:31px/);
+
+  const fallbackName = "A".repeat(60);
+  const fallbackResponse = await request(`/overlay?preview=1&style=noir&username=&name=${fallbackName}`);
+  const fallbackHtml = await fallbackResponse.text();
+  assert.match(fallbackHtml, /--noir-name-size:22px/);
+  assert.match(fallbackHtml, /is-very-long/);
+
   const graphiteResponse = await request("/overlay?preview=1&style=graphite");
   assert.equal(graphiteResponse.status, 200);
   assert.match(await graphiteResponse.text(), /data-style="graphite"/);
@@ -437,7 +454,7 @@ test("panel stays compact and style shows visual choices in Telegram", async () 
     assert.equal(style.status, 200);
     const preview = calls.find((call) => call.method === "sendPhoto");
     assert.ok(preview);
-    assert.match(preview.body.photo, /\/style-preview\.png\?v=17$/);
+    assert.match(preview.body.photo, /\/style-preview\.png\?v=18$/);
     assert.match(preview.body.caption, /Оформление · ffdfd/);
     assert.match(preview.body.caption, /Сейчас: <b>Нуар<\/b>/);
     assert.match(preview.body.caption, /Размер OBS: <code>420 × 420<\/code>/);
