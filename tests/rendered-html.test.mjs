@@ -95,6 +95,22 @@ test("serves the style preview used inside Telegram", async () => {
   assert.equal(metadata.height, 1880);
 });
 
+test("noir nickname animation fades without shaking", async () => {
+  const css = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  const animationRules = css.slice(
+    css.indexOf('.subscriber-wrap[data-style="noir"] .identity-pixels'),
+    css.indexOf(".noir-wide-qr"),
+  );
+  const keyframes = css.slice(
+    css.indexOf("@keyframes noir-signal-out"),
+    css.indexOf("@keyframes subscriber-progress"),
+  );
+
+  assert.doesNotMatch(animationRules, /steps\(|noir-scanline/);
+  assert.doesNotMatch(keyframes, /translate|skew|clip-path|transform\s*:/);
+  assert.match(keyframes, /filter: blur/);
+});
+
 test("ships only the original clean static anime mascot", async () => {
   const [staticBytes, baseBytes] = await Promise.all([
     readFile(new URL("../public/mascot-anime-static.png", import.meta.url)),

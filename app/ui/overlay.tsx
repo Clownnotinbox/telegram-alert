@@ -131,12 +131,12 @@ export function Overlay({
       setCelebrating(true);
       setPhase("enter");
       playGentleChime();
-    }, 680);
+    }, 300);
     const settleTimer = setTimeout(() => {
       setPhase("idle");
       animating.current = false;
       setQueue((current) => current.slice(1));
-    }, 1700);
+    }, 1100);
     const toastTimer = setTimeout(() => setCelebrating(false), 8000);
     animationTimers.current.push(swapTimer, settleTimer, toastTimer);
 
@@ -149,13 +149,13 @@ export function Overlay({
           setSubscriber(persistentSubscriber.current);
           setCelebrating(false);
           setPhase("enter");
-        }, 680);
+        }, 300);
         const restoreSettleTimer = setTimeout(() => {
           const restoredSequence = persistentSubscriber.current?.sequence ?? 0;
           setPhase("idle");
           animating.current = false;
           setQueue((current) => current.filter((event) => event.sequence > restoredSequence));
-        }, 1700);
+        }, 1100);
         animationTimers.current.push(restoreSwapTimer, restoreSettleTimer);
       }, 8000);
       animationTimers.current.push(restoreTimer);
