@@ -1040,11 +1040,14 @@ a { -webkit-tap-highlight-color: transparent; }
 
 .subscriber-wrap[data-style="noir-wide"] .noir-wide-art { display: block; }
 
+/* Flush with the rule the art draws underneath: it runs 6.25% → 43.44% of the
+   card width, so the nickname starts where the rule starts and can never reach
+   past where it ends. */
 .subscriber-wrap[data-style="noir-wide"] .subscriber-identity {
   z-index: 5;
   top: 10.6%;
-  left: 7.1%;
-  width: 38%;
+  left: 6.25%;
+  width: 37.2%;
   height: 14%;
   grid-template-columns: 1fr;
   padding: 0;

@@ -28,8 +28,8 @@ function initials(name: string) {
    nothing but the nickname now. */
 function noirNameSize(length: number, wide: boolean) {
   const maxSize = wide ? 84 : 56;
-  const minSize = wide ? 22 : 18;
-  const widthBudget = wide ? 880 : 610;
+  const minSize = wide ? 42 : 28;
+  const widthBudget = wide ? 845 : 610;
   return Math.max(minSize, Math.min(maxSize, Math.floor(widthBudget / Math.max(length, 1))));
 }
 
@@ -180,22 +180,35 @@ export function SubscriberCard({
 
   /* noirNameSize assumes an average glyph, which is all the server can do — a
      nickname of all «w» still overruns the plate the art draws, and there is
-     nowhere for it to spill.  Measure the real line and step down until it
-     fits, re-checking whenever OBS resizes the source. */
+     nowhere for it to spill.  Measure the real line, step the size down to the
+     smallest we are willing to show, and cut the tail off past that. */
   useEffect(() => {
     const element = nameRef.current;
     if (!element || !noirPlate) return;
 
+    const minSize = noirWideLike ? 42 : 28;
+
     const fit = () => {
       const available = element.clientWidth;
       if (!available) return;
-      const minSize = noirWideLike ? 22 : 18;
+
+      element.textContent = displayedName;
       let size = noirNameSize(displayedNameLength, noirWideLike);
+      let ink = 0;
       for (let attempt = 0; attempt < 3; attempt += 1) {
         element.style.setProperty("--noir-name-size", `${size}px`);
-        const ink = inkWidth(element);
-        if (ink <= available || size <= minSize) return;
+        ink = inkWidth(element);
+        if (ink <= available) return;
+        if (size <= minSize) break;
         size = Math.max(minSize, Math.floor((size * available) / ink));
+      }
+
+      const characters = Array.from(displayedName);
+      let keep = Math.min(characters.length - 1, Math.max(1, Math.floor((characters.length * available) / ink) - 1));
+      element.textContent = `${characters.slice(0, keep).join("")}…`;
+      while (keep > 1 && inkWidth(element) > available) {
+        keep -= 1;
+        element.textContent = `${characters.slice(0, keep).join("")}…`;
       }
     };
 
