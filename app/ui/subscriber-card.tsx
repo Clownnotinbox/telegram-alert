@@ -23,10 +23,11 @@ function initials(name: string) {
 
 /* The budget is roughly twice the plate the art reserves for the nickname, so
    the line lands at ~90% of it whatever the name length: the condensed face
-   advances about half an em per character.  3:2 used to spend 740 of its 475px
-   plate, which read as a caption floating in an empty frame. */
+   advances about half an em per character.  The budget bounds long names, the
+   cap bounds short ones — and the cap is generous because the plates carry
+   nothing but the nickname now. */
 function noirNameSize(length: number, wide: boolean) {
-  const maxSize = wide ? 66 : 34;
+  const maxSize = wide ? 84 : 56;
   const minSize = wide ? 22 : 18;
   const widthBudget = wide ? 880 : 610;
   return Math.max(minSize, Math.min(maxSize, Math.floor(widthBudget / Math.max(length, 1))));
@@ -246,7 +247,7 @@ export function SubscriberCard({
           </div>
 
           <div className="subscriber-copy">
-            {!animeLike && (
+            {!animeLike && !noirPlate && (
               <div className={`subscriber-label ${labelFading ? "is-swapping" : ""}`}>
                 <span className={`subscriber-indicator ${celebrating ? "is-live" : ""}`} />
                 {celebrating ? "Новый подписчик" : waiting ? "Ожидаем подписчика" : "Последний подписчик"}

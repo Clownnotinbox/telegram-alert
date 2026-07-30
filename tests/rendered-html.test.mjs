@@ -34,7 +34,7 @@ test("renders the OBS overlay", async () => {
   const response = await request("/overlay?preview=1");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.match(html, /Последний подписчик/);
+  assert.doesNotMatch(html, /Последний подписчик/, "the noir plates carry the nickname alone");
   assert.match(html, /@anna_live/);
   assert.doesNotMatch(html, /Открыть Telegram/);
   assert.match(html, /data-style="noir"/);
@@ -53,7 +53,7 @@ test("renders the OBS overlay", async () => {
   const wideHtml = await wideResponse.text();
   assert.match(wideHtml, /data-style="noir-wide"/);
   assert.match(wideHtml, /\/noir-wide-source\.png\?v=1/);
-  assert.match(wideHtml, /--noir-name-size:66px/);
+  assert.match(wideHtml, /--noir-name-size:84px/);
   assert.doesNotMatch(wideHtml, /Открыть Telegram/);
 
   const longestUsername = "a".repeat(32);
@@ -75,7 +75,9 @@ test("renders the OBS overlay", async () => {
 
   const graphiteResponse = await request("/overlay?preview=1&style=graphite");
   assert.equal(graphiteResponse.status, 200);
-  assert.match(await graphiteResponse.text(), /data-style="graphite"/);
+  const graphiteHtml = await graphiteResponse.text();
+  assert.match(graphiteHtml, /data-style="graphite"/);
+  assert.match(graphiteHtml, /Последний подписчик/, "only the noir plates drop the caption");
 });
 
 test("a production overlay waits honestly instead of showing a demo subscriber", async () => {

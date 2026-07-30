@@ -25,7 +25,7 @@ type Snapshot = {
    pixel-glitch timing they were built around. */
 const SWAP_TIMINGS = {
   base: { swap: 300, settle: 1100 },
-  noir: { swap: 400, settle: 1300 },
+  noir: { swap: 560, settle: 1780 },
 } as const;
 
 function swapTimings(style: OverlayStyle) {
