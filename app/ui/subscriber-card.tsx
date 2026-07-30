@@ -22,7 +22,7 @@ function initials(name: string) {
 }
 
 function noirNameSize(length: number, wide: boolean) {
-  const maxSize = wide ? 46 : 34;
+  const maxSize = wide ? 49 : 34;
   const minSize = wide ? 22 : 18;
   const widthBudget = wide ? 740 : 610;
   return Math.max(minSize, Math.min(maxSize, Math.floor(widthBudget / Math.max(length, 1))));

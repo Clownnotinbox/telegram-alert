@@ -53,6 +53,7 @@ test("renders the OBS overlay", async () => {
   const wideHtml = await wideResponse.text();
   assert.match(wideHtml, /data-style="noir-wide"/);
   assert.match(wideHtml, /\/noir-wide-source\.png\?v=1/);
+  assert.match(wideHtml, /--noir-name-size:49px/);
   assert.doesNotMatch(wideHtml, /Открыть Telegram/);
 
   const longestUsername = "a".repeat(32);
@@ -454,13 +455,14 @@ test("panel stays compact and style shows visual choices in Telegram", async () 
     assert.equal(style.status, 200);
     const preview = calls.find((call) => call.method === "sendPhoto");
     assert.ok(preview);
-    assert.match(preview.body.photo, /\/style-preview\.png\?v=18$/);
+    assert.match(preview.body.photo, /\/style-preview\.png\?v=19$/);
     assert.match(preview.body.caption, /Оформление · ffdfd/);
     assert.match(preview.body.caption, /Сейчас: <b>Нуар<\/b>/);
     assert.match(preview.body.caption, /Размер OBS: <code>420 × 420<\/code>/);
     assert.match(preview.body.reply_markup.inline_keyboard[0][0].text, /^✓ /);
     assert.equal(preview.body.reply_markup.inline_keyboard[0][0].callback_data, `style:${installation.id}:noir`);
     assert.equal(preview.body.reply_markup.inline_keyboard[0][1].callback_data, `style:${installation.id}:noir-wide`);
+    assert.match(preview.body.reply_markup.inline_keyboard[0][1].text, /Нуар 3:2 · 1280×853/);
     assert.equal(preview.body.reply_markup.inline_keyboard[1][0].callback_data, `style:${installation.id}:anime`);
 
     calls.length = 0;

@@ -914,7 +914,7 @@ a { -webkit-tap-highlight-color: transparent; }
 
 .subscriber-wrap[data-style="noir"] .subscriber-identity::after {
   position: absolute;
-  right: 92px;
+  right: 120px;
   bottom: 1px;
   left: 0;
   height: 1.5px;
@@ -1045,7 +1045,7 @@ a { -webkit-tap-highlight-color: transparent; }
 .subscriber-wrap[data-style="noir-wide"] .subscriber-identity {
   z-index: 5;
   top: 10.6%;
-  left: 5.8%;
+  left: 7.1%;
   width: 38%;
   height: 14%;
   grid-template-columns: 1fr;
@@ -1055,14 +1055,14 @@ a { -webkit-tap-highlight-color: transparent; }
 .subscriber-wrap[data-style="noir-wide"] .avatar-shell { display: none; }
 .subscriber-wrap[data-style="noir-wide"] .subscriber-copy {
   position: relative;
-  top: -3px;
+  top: -7px;
   min-width: 0;
 }
 .subscriber-wrap[data-style="noir-wide"] .subscriber-label {
   margin-bottom: clamp(3px, .55vw, 8px);
   color: rgba(255,255,255,.64);
   font-family: "Bahnschrift Condensed", "Arial Narrow", sans-serif;
-  font-size: clamp(8px, .95vw, 12px);
+  font-size: clamp(8px, 1.02vw, 13px);
   font-weight: 600;
   letter-spacing: .2em;
   text-shadow: 0 1px 7px #000;
@@ -1075,7 +1075,7 @@ a { -webkit-tap-highlight-color: transparent; }
   max-width: 100%;
   color: #fff;
   font-family: "Bahnschrift Condensed", "Arial Narrow", "Segoe UI", sans-serif;
-  font-size: min(var(--noir-name-size, 46px), 3.65vw);
+  font-size: min(var(--noir-name-size, 49px), 3.9vw);
   font-weight: 600;
   letter-spacing: .055em;
   line-height: .95;

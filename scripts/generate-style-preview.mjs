@@ -115,7 +115,7 @@ const noirForeground = Buffer.from(`
       <rect x="16" y="16" width="488" height="488" rx="36" fill="none" stroke="#fff" stroke-opacity=".92" stroke-width="1.4" filter="url(#glow)"/>
       <text x="39" y="65" fill="#fff" fill-opacity=".66" font-size="13" font-weight="650" letter-spacing="2.2">ПОСЛЕДНИЙ ПОДПИСЧИК</text>
       <text x="39" y="108" fill="#fff" font-size="40" font-weight="650" letter-spacing="1.3" filter="url(#glow)">@anna_live</text>
-      <line x1="39" y1="128" x2="364" y2="128" stroke="#fff" stroke-opacity=".9" stroke-width="1.5" filter="url(#glow)"/>
+      <line x1="39" y1="128" x2="325" y2="128" stroke="#fff" stroke-opacity=".9" stroke-width="1.5" filter="url(#glow)"/>
       <rect x="37" y="211" width="221" height="221" rx="30" fill="#030304" fill-opacity=".86" stroke="#fff" stroke-opacity=".97" stroke-width="1.7" filter="url(#glow)"/>
     </g>
   </svg>
@@ -126,8 +126,8 @@ const noirWideForeground = Buffer.from(`
       <filter id="wideGlow"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     </defs>
     <g transform="translate(640 1320)" font-family="Bahnschrift Condensed, Arial Narrow, Segoe UI, sans-serif">
-      <text x="31" y="126" fill="#fff" fill-opacity=".64" font-size="11" font-weight="600" letter-spacing="2">ПОСЛЕДНИЙ ПОДПИСЧИК</text>
-      <text x="31" y="159" fill="#fff" font-size="35" font-weight="650" letter-spacing="1.2" filter="url(#wideGlow)">@anna_live</text>
+      <text x="31" y="126" fill="#fff" fill-opacity=".64" font-size="12" font-weight="600" letter-spacing="2">ПОСЛЕДНИЙ ПОДПИСЧИК</text>
+      <text x="31" y="159" fill="#fff" font-size="37" font-weight="650" letter-spacing="1.2" filter="url(#wideGlow)">@anna_live</text>
       <rect x="31" y="208" width="179" height="179" rx="21" fill="#030304" fill-opacity=".86" stroke="#fff" stroke-opacity=".97" stroke-width="1.7" filter="url(#wideGlow)"/>
     </g>
   </svg>

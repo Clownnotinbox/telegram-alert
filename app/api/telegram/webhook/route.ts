@@ -154,7 +154,7 @@ function styleKeyboard(installation: StreamerInstallation) {
     inline_keyboard: [
       [
         { text: `${installation.style === "noir" ? "✓ " : ""}Нуар`, callback_data: `style:${installation.id}:noir` },
-        { text: `${installation.style === "noir-wide" ? "✓ " : ""}Нуар 3:2`, callback_data: `style:${installation.id}:noir-wide` },
+        { text: `${installation.style === "noir-wide" ? "✓ " : ""}Нуар 3:2 · 1280×853`, callback_data: `style:${installation.id}:noir-wide` },
       ],
       [
         { text: `${installation.style === "anime" ? "✓ " : ""}Аниме`, callback_data: `style:${installation.id}:anime` },
@@ -184,7 +184,7 @@ async function sendInstallationPanel(chatId: number | string, installation: Stre
 async function sendStylePanel(chatId: number | string, installation: StreamerInstallation, baseUrl: string) {
   await telegramCall("sendPhoto", {
     chat_id: chatId,
-    photo: `${baseUrl}/style-preview.png?v=18`,
+    photo: `${baseUrl}/style-preview.png?v=19`,
     caption: styleCaption(installation),
     parse_mode: "HTML",
     reply_markup: styleKeyboard(installation),
