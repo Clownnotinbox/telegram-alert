@@ -59,17 +59,17 @@ test("renders the OBS overlay", async () => {
   const longMainResponse = await request(`/overlay?preview=1&style=noir&username=${longestUsername}`);
   const longMainHtml = await longMainResponse.text();
   assert.match(longMainHtml, new RegExp(`@${longestUsername}`));
-  assert.match(longMainHtml, /--noir-name-size:24px/);
+  assert.match(longMainHtml, /--noir-name-size:18px/);
   assert.match(longMainHtml, /is-long/);
 
   const longWideResponse = await request(`/overlay?preview=1&style=noir-wide&username=${longestUsername}`);
   const longWideHtml = await longWideResponse.text();
-  assert.match(longWideHtml, /--noir-name-size:31px/);
+  assert.match(longWideHtml, /--noir-name-size:22px/);
 
   const fallbackName = "A".repeat(60);
   const fallbackResponse = await request(`/overlay?preview=1&style=noir&username=&name=${fallbackName}`);
   const fallbackHtml = await fallbackResponse.text();
-  assert.match(fallbackHtml, /--noir-name-size:22px/);
+  assert.match(fallbackHtml, /--noir-name-size:18px/);
   assert.match(fallbackHtml, /is-very-long/);
 
   const graphiteResponse = await request("/overlay?preview=1&style=graphite");

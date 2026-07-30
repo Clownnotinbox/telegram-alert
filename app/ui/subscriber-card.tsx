@@ -22,18 +22,10 @@ function initials(name: string) {
 }
 
 function noirNameSize(length: number, wide: boolean) {
-  if (wide) {
-    if (length <= 14) return 46;
-    if (length <= 20) return 41;
-    if (length <= 26) return 36;
-    if (length <= 34) return 31;
-    return 28;
-  }
-  if (length <= 14) return 34;
-  if (length <= 20) return 30;
-  if (length <= 26) return 27;
-  if (length <= 34) return 24;
-  return 22;
+  const maxSize = wide ? 46 : 34;
+  const minSize = wide ? 22 : 18;
+  const widthBudget = wide ? 740 : 610;
+  return Math.max(minSize, Math.min(maxSize, Math.floor(widthBudget / Math.max(length, 1))));
 }
 
 function QrMark({
