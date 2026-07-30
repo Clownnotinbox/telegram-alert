@@ -8,7 +8,7 @@ export type Subscriber = {
   source: string;
 };
 
-export type OverlayStyle = "graphite" | "paper" | "mono" | "anime";
+export type OverlayStyle = "noir" | "noir-wide" | "graphite" | "paper" | "mono" | "anime";
 
 export type OverlayCommunity = {
   title: string;

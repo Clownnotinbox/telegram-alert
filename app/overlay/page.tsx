@@ -1,7 +1,7 @@
 import { Overlay } from "../ui/overlay";
 import type { OverlayStyle } from "../ui/types";
 
-const PREVIEW_STYLES = new Set<OverlayStyle>(["anime", "graphite", "paper", "mono"]);
+const PREVIEW_STYLES = new Set<OverlayStyle>(["noir", "noir-wide", "anime", "graphite", "paper", "mono"]);
 
 export default async function OverlayPage({
   searchParams,

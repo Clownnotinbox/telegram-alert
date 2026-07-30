@@ -1,7 +1,7 @@
 import type { Pool, QueryResultRow } from "pg";
 import { runtimeEnv } from "./runtime-env";
 
-export const OVERLAY_STYLES = ["graphite", "paper", "mono", "anime"] as const;
+export const OVERLAY_STYLES = ["noir", "noir-wide", "graphite", "paper", "mono", "anime"] as const;
 export type OverlayStyle = (typeof OVERLAY_STYLES)[number];
 
 export type OverlaySettings = {
@@ -47,7 +47,7 @@ export type NewSubscriber = Omit<SubscriberRecord, "sequence" | "installationId"
 };
 
 export const DEFAULT_OVERLAY_SETTINGS: OverlaySettings = {
-  style: "anime",
+  style: "noir",
   version: 0,
   updatedAt: new Date(0).toISOString(),
 };
@@ -201,7 +201,7 @@ async function postgresPool() {
         channel_title TEXT NOT NULL,
         channel_username TEXT,
         overlay_key TEXT NOT NULL UNIQUE,
-        style TEXT NOT NULL DEFAULT 'anime',
+        style TEXT NOT NULL DEFAULT 'noir',
         version BIGINT NOT NULL DEFAULT 1,
         active BOOLEAN NOT NULL DEFAULT TRUE,
         created_at TIMESTAMPTZ NOT NULL,
@@ -209,6 +209,37 @@ async function postgresPool() {
       )
     `);
     await memory.__pgPool!.query("CREATE INDEX IF NOT EXISTS streamer_installations_owner_idx ON streamer_installations(owner_user_id)");
+    await memory.__pgPool!.query("ALTER TABLE streamer_installations ALTER COLUMN style SET DEFAULT 'noir'");
+    await memory.__pgPool!.query(`
+      CREATE TABLE IF NOT EXISTS app_migrations (
+        id TEXT PRIMARY KEY,
+        applied_at TIMESTAMPTZ NOT NULL
+      )
+    `);
+    const migrationClient = await memory.__pgPool!.connect();
+    try {
+      await migrationClient.query("BEGIN");
+      const noirMigration = await migrationClient.query<{ id: string }>(
+        `INSERT INTO app_migrations (id, applied_at)
+         VALUES ('20260730-noir-default', NOW())
+         ON CONFLICT (id) DO NOTHING
+         RETURNING id`,
+      );
+      if (noirMigration.rows[0]) {
+        await migrationClient.query(
+          "UPDATE streamer_installations SET style = 'noir', version = version + 1, updated_at = NOW()",
+        );
+        await migrationClient.query(
+          "UPDATE overlay_settings SET style = 'noir', version = version + 1, updated_at = NOW()",
+        );
+      }
+      await migrationClient.query("COMMIT");
+    } catch (error) {
+      await migrationClient.query("ROLLBACK");
+      throw error;
+    } finally {
+      migrationClient.release();
+    }
   })();
   await memory.__pgReady;
   return memory.__pgPool;
@@ -247,16 +278,35 @@ async function d1Database() {
           channel_title TEXT NOT NULL,
           channel_username TEXT,
           overlay_key TEXT NOT NULL UNIQUE,
-          style TEXT NOT NULL DEFAULT 'anime',
+          style TEXT NOT NULL DEFAULT 'noir',
           version INTEGER NOT NULL DEFAULT 1,
           active INTEGER NOT NULL DEFAULT 1,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL
         )`),
         db.prepare("CREATE INDEX IF NOT EXISTS streamer_installations_owner_idx ON streamer_installations(owner_user_id)"),
+        db.prepare(`CREATE TABLE IF NOT EXISTS app_migrations (
+          id TEXT PRIMARY KEY,
+          applied_at TEXT NOT NULL
+        )`),
       ]);
       await db.prepare("ALTER TABLE subscriber_events ADD COLUMN installation_id TEXT").run().catch(() => undefined);
       await db.prepare("CREATE INDEX IF NOT EXISTS subscriber_events_installation_idx ON subscriber_events(installation_id, sequence)").run();
+      const noirMigration = await db.prepare(
+        "SELECT id FROM app_migrations WHERE id = ?",
+      ).bind("20260730-noir-default").first<{ id: string }>();
+      if (!noirMigration) {
+        const appliedAt = new Date().toISOString();
+        await db.prepare(
+          "UPDATE streamer_installations SET style = ?, version = version + 1, updated_at = ?",
+        ).bind("noir", appliedAt).run();
+        await db.prepare(
+          "UPDATE overlay_settings SET style = ?, version = version + 1, updated_at = ?",
+        ).bind("noir", appliedAt).run();
+        await db.prepare(
+          "INSERT INTO app_migrations (id, applied_at) VALUES (?, ?)",
+        ).bind("20260730-noir-default", appliedAt).run();
+      }
     })();
     await memory.__d1Ready;
     return db;
@@ -281,7 +331,7 @@ function newInstallation(input: InstallationInput): StreamerInstallation {
     id: crypto.randomUUID(),
     ...input,
     overlayKey: `${crypto.randomUUID().replaceAll("-", "")}${crypto.randomUUID().replaceAll("-", "").slice(0, 16)}`,
-    style: "anime",
+    style: "noir",
     version: 1,
     active: true,
     createdAt: now,

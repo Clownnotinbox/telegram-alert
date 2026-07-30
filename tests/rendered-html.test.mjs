@@ -34,12 +34,26 @@ test("renders the OBS overlay", async () => {
   const response = await request("/overlay?preview=1");
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.doesNotMatch(html, /Последний подписчик/);
-  assert.match(html, /Анна Смирнова/);
-  assert.doesNotMatch(html, /@annasmirnova/);
-  assert.match(html, /data-style="anime"/);
-  assert.match(html, /\/mascot-anime-static\.png\?v=6/);
+  assert.match(html, /Последний подписчик/);
+  assert.match(html, /@anna_live/);
+  assert.doesNotMatch(html, /Открыть Telegram/);
+  assert.match(html, /data-style="noir"/);
+  assert.match(html, /\/noir-portrait\.webp\?v=1/);
   assert.doesNotMatch(html, /mascot-wave/);
+
+  const animeResponse = await request("/overlay?preview=1&style=anime");
+  assert.equal(animeResponse.status, 200);
+  const animeHtml = await animeResponse.text();
+  assert.match(animeHtml, /data-style="anime"/);
+  assert.match(animeHtml, /Анна Смирнова/);
+  assert.match(animeHtml, /\/mascot-anime-static\.png\?v=6/);
+
+  const wideResponse = await request("/overlay?preview=1&style=noir-wide");
+  assert.equal(wideResponse.status, 200);
+  const wideHtml = await wideResponse.text();
+  assert.match(wideHtml, /data-style="noir-wide"/);
+  assert.match(wideHtml, /\/noir-wide-source\.png\?v=1/);
+  assert.doesNotMatch(wideHtml, /Открыть Telegram/);
 
   const graphiteResponse = await request("/overlay?preview=1&style=graphite");
   assert.equal(graphiteResponse.status, 200);
@@ -60,7 +74,7 @@ test("serves the style preview used inside Telegram", async () => {
   assert.deepEqual([...bytes.slice(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
   const metadata = await sharp(bytes).metadata();
   assert.equal(metadata.width, 1200);
-  assert.equal(metadata.height, 1260);
+  assert.equal(metadata.height, 1880);
 });
 
 test("ships only the original clean static anime mascot", async () => {
@@ -177,6 +191,7 @@ test("a regular group member receives join events without bot admin rights", asy
   const installation = (await connected.json()).installation;
   assert.equal(installation.ownerUserId, "303");
   assert.equal(installation.active, true);
+  assert.equal(installation.style, "noir");
 
   const joined = await request("/api/telegram/webhook", {
     method: "POST",
@@ -267,6 +282,7 @@ test("self-service flow creates a private overlay, changes style and sends a tes
   const installation = (await connected.json()).installation;
   assert.equal(installation.ownerUserId, "101");
   assert.equal(installation.channelId, "-100500");
+  assert.equal(installation.style, "noir");
   assert.ok(installation.overlayKey.length >= 40);
 
   const callback = await request("/api/telegram/webhook", {
@@ -421,19 +437,42 @@ test("panel stays compact and style shows visual choices in Telegram", async () 
     assert.equal(style.status, 200);
     const preview = calls.find((call) => call.method === "sendPhoto");
     assert.ok(preview);
-    assert.match(preview.body.photo, /\/style-preview\.png\?v=15$/);
+    assert.match(preview.body.photo, /\/style-preview\.png\?v=17$/);
     assert.match(preview.body.caption, /Оформление · ffdfd/);
-    assert.match(preview.body.caption, /Сейчас: <b>Аниме<\/b>/);
+    assert.match(preview.body.caption, /Сейчас: <b>Нуар<\/b>/);
+    assert.match(preview.body.caption, /Размер OBS: <code>420 × 420<\/code>/);
     assert.match(preview.body.reply_markup.inline_keyboard[0][0].text, /^✓ /);
-    assert.equal(preview.body.reply_markup.inline_keyboard[0][0].callback_data, `style:${installation.id}:anime`);
-    assert.equal(preview.body.reply_markup.inline_keyboard[0][1].callback_data, `style:${installation.id}:graphite`);
+    assert.equal(preview.body.reply_markup.inline_keyboard[0][0].callback_data, `style:${installation.id}:noir`);
+    assert.equal(preview.body.reply_markup.inline_keyboard[0][1].callback_data, `style:${installation.id}:noir-wide`);
+    assert.equal(preview.body.reply_markup.inline_keyboard[1][0].callback_data, `style:${installation.id}:anime`);
+
+    calls.length = 0;
+    const chooseWide = await request("/api/telegram/webhook", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        update_id: 83,
+        callback_query: {
+          id: "style-photo-wide",
+          from: { id: ownerId },
+          data: `style:${installation.id}:noir-wide`,
+          message: { message_id: 902, chat: { id: ownerId, type: "private" }, photo: [{}] },
+        },
+      }),
+    });
+    assert.equal(chooseWide.status, 200);
+    const wideEdit = calls.find((call) => call.method === "editMessageCaption");
+    assert.ok(wideEdit);
+    assert.match(wideEdit.body.caption, /Сейчас: <b>Нуар 3:2<\/b>/);
+    assert.match(wideEdit.body.caption, /Размер OBS: <code>1280 × 853<\/code>/);
+    assert.match(wideEdit.body.reply_markup.inline_keyboard[0][1].text, /^✓ /);
 
     calls.length = 0;
     const chooseStyle = await request("/api/telegram/webhook", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        update_id: 83,
+        update_id: 84,
         callback_query: {
           id: "style-photo",
           from: { id: ownerId },
@@ -446,7 +485,7 @@ test("panel stays compact and style shows visual choices in Telegram", async () 
     const edit = calls.find((call) => call.method === "editMessageCaption");
     assert.ok(edit);
     assert.match(edit.body.caption, /Сейчас: <b>Только текст<\/b>/);
-    assert.equal(edit.body.reply_markup.inline_keyboard[1][1].text, "✓ Только текст");
+    assert.equal(edit.body.reply_markup.inline_keyboard[2][1].text, "✓ Только текст");
   } finally {
     globalThis.fetch = originalFetch;
     delete process.env.BOT_TOKEN;

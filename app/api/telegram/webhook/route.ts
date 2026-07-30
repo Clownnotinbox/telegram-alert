@@ -44,6 +44,8 @@ type TelegramUpdate = {
 };
 
 const STYLE_LABELS: Record<OverlayStyle, string> = {
+  noir: "Нуар",
+  "noir-wide": "Нуар 3:2",
   graphite: "Графит",
   paper: "Светлый",
   mono: "Только текст",
@@ -99,6 +101,10 @@ function subscriberAvatarUrl(baseUrl: string, installation: StreamerInstallation
   return `${baseUrl}/api/telegram/avatar?${query}`;
 }
 
+function overlayDimensions(style: OverlayStyle) {
+  return style === "noir-wide" ? "1280 × 853" : "420 × 420";
+}
+
 function installationPanelText(installation: StreamerInstallation, baseUrl: string) {
   const status = installation.active ? "работает" : "отключён";
   return [
@@ -109,7 +115,7 @@ function installationPanelText(installation: StreamerInstallation, baseUrl: stri
     "Ссылка для OBS:",
     `<code>${overlayUrl(baseUrl, installation)}</code>`,
     "",
-    "Размер Browser Source: <code>420 × 420</code>",
+    `Размер Browser Source: <code>${overlayDimensions(installation.style)}</code>`,
     installation.channelUsername
       ? "QR-код публичной ссылки включён."
       : "QR-код появится, когда у чата будет публичная @ссылка.",
@@ -137,6 +143,7 @@ function styleCaption(installation: StreamerInstallation) {
   return [
     `<b>Оформление · ${escapeHtml(installation.channelTitle)}</b>`,
     `Сейчас: <b>${STYLE_LABELS[installation.style]}</b>`,
+    `Размер OBS: <code>${overlayDimensions(installation.style)}</code>`,
     "",
     "Выберите вариант ниже. OBS обновится сразу — ссылку менять не нужно.",
   ].join("\n");
@@ -145,6 +152,10 @@ function styleCaption(installation: StreamerInstallation) {
 function styleKeyboard(installation: StreamerInstallation) {
   return {
     inline_keyboard: [
+      [
+        { text: `${installation.style === "noir" ? "✓ " : ""}Нуар`, callback_data: `style:${installation.id}:noir` },
+        { text: `${installation.style === "noir-wide" ? "✓ " : ""}Нуар 3:2`, callback_data: `style:${installation.id}:noir-wide` },
+      ],
       [
         { text: `${installation.style === "anime" ? "✓ " : ""}Аниме`, callback_data: `style:${installation.id}:anime` },
         { text: `${installation.style === "graphite" ? "✓ " : ""}Графит`, callback_data: `style:${installation.id}:graphite` },
@@ -173,7 +184,7 @@ async function sendInstallationPanel(chatId: number | string, installation: Stre
 async function sendStylePanel(chatId: number | string, installation: StreamerInstallation, baseUrl: string) {
   await telegramCall("sendPhoto", {
     chat_id: chatId,
-    photo: `${baseUrl}/style-preview.png?v=15`,
+    photo: `${baseUrl}/style-preview.png?v=17`,
     caption: styleCaption(installation),
     parse_mode: "HTML",
     reply_markup: styleKeyboard(installation),
@@ -519,7 +530,7 @@ export async function POST(request: Request) {
   if (message?.text?.startsWith("/help")) {
     await telegramCall("sendMessage", {
       chat_id: message.chat.id,
-      text: "1. Откройте /panel\n2. Нажмите кнопку выбора группы или канала\n3. Выберите нужный чат\n4. Скопируйте OBS-ссылку\n5. Добавьте её как Browser Source 420 × 420\n\nВсё остальное бот сделает сам.",
+      text: "1. Откройте /panel\n2. Нажмите кнопку выбора группы или канала\n3. Выберите нужный чат\n4. Скопируйте OBS-ссылку\n5. Добавьте её как Browser Source: 420 × 420 для обычных стилей или 1280 × 853 для «Нуар 3:2»\n\nВсё остальное бот сделает сам.",
     });
     return Response.json({ ok: true });
   }

@@ -64,7 +64,7 @@ export function Overlay({
   const [phase, setPhase] = useState<"idle" | "exit" | "enter">(preview && previewPhase ? previewPhase : "idle");
   const [celebrating, setCelebrating] = useState(false);
   const [queue, setQueue] = useState<Subscriber[]>([]);
-  const [style, setStyle] = useState<OverlayStyle>(preview && previewStyle ? previewStyle : "anime");
+  const [style, setStyle] = useState<OverlayStyle>(preview && previewStyle ? previewStyle : "noir");
   const cursor = useRef(0);
   const initialized = useRef(false);
   const animating = useRef(false);

@@ -36,7 +36,7 @@ export const streamerInstallations = sqliteTable(
     channelTitle: text("channel_title").notNull(),
     channelUsername: text("channel_username"),
     overlayKey: text("overlay_key").notNull(),
-    style: text("style").notNull().default("graphite"),
+    style: text("style").notNull().default("noir"),
     version: integer("version").notNull().default(1),
     active: integer("active", { mode: "boolean" }).notNull().default(true),
     createdAt: text("created_at").notNull(),
