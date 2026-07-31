@@ -5,6 +5,7 @@ import {
   isOverlayStyle,
   listInstallationsByOwner,
   recordSubscriber,
+  removeSubscriber,
   setInstallationActive,
   setOverlayStyle,
   upsertStreamerInstallation,
@@ -32,6 +33,7 @@ type TelegramUpdate = {
     from?: TelegramUser;
     chat_shared?: { request_id: number; chat_id: number; title?: string; username?: string };
     new_chat_members?: TelegramUser[];
+    left_chat_member?: TelegramUser;
   };
   callback_query?: {
     id: string;
@@ -488,6 +490,16 @@ export async function POST(request: Request) {
     return Response.json({ ok: true, subscribers });
   }
 
+  if (message?.left_chat_member && ["group", "supergroup"].includes(message.chat.type || "")) {
+    const installation = await getInstallationByChannelId(String(message.chat.id));
+    const user = message.left_chat_member;
+    if (!installation || !installation.active || user.is_bot) {
+      return Response.json({ ok: true, ignored: true });
+    }
+    const removed = await removeSubscriber(installation.id, String(user.id));
+    return Response.json({ ok: true, removed });
+  }
+
   if (message && message.chat.type !== "private") {
     return Response.json({ ok: true, ignored: true });
   }
@@ -581,7 +593,13 @@ export async function POST(request: Request) {
   }
 
   const change = update.chat_member;
-  if (!change || isMember(change.old_chat_member) || !isMember(change.new_chat_member)) {
+  if (!change) {
+    return Response.json({ ok: true, ignored: true });
+  }
+
+  const wasMember = isMember(change.old_chat_member);
+  const isMemberNow = isMember(change.new_chat_member);
+  if (wasMember === isMemberNow || change.new_chat_member.user.is_bot) {
     return Response.json({ ok: true, ignored: true });
   }
 
@@ -591,6 +609,11 @@ export async function POST(request: Request) {
   }
 
   const user = change.new_chat_member.user;
+  if (wasMember && !isMemberNow) {
+    const removed = await removeSubscriber(installation.id, String(user.id));
+    return Response.json({ ok: true, removed });
+  }
+
   const subscriber = await recordSubscriber({
     eventKey: `telegram-member:${change.chat.id}:${user.id}:${change.date}`,
     installationId: installation.id,

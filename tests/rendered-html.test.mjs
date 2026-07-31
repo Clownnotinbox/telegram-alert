@@ -290,6 +290,86 @@ test("a regular group member receives join events without bot admin rights", asy
   assert.equal(snapshot.status, 200);
   assert.equal((await snapshot.json()).latest.name, "Новый Зритель");
 
+  const secondJoin = await request("/api/telegram/webhook", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      update_id: 52,
+      message: {
+        message_id: 9,
+        date: 1_700_000_110,
+        chat: { id: -100700, type: "supergroup", title: "Группа без администратора" },
+        new_chat_members: [{ id: 405, first_name: "Следующий", last_name: "Зритель" }],
+      },
+    }),
+  });
+  assert.equal(secondJoin.status, 200);
+
+  const thirdJoin = await request("/api/telegram/webhook", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      update_id: 53,
+      message: {
+        message_id: 10,
+        date: 1_700_000_115,
+        chat: { id: -100700, type: "supergroup", title: "Группа без администратора" },
+        new_chat_members: [{ id: 406, first_name: "Последний", last_name: "Зритель" }],
+      },
+    }),
+  });
+  assert.equal(thirdJoin.status, 200);
+
+  const beforeLeave = await request(`/api/subscribers?after=0&key=${installation.overlayKey}`, {
+    headers: { accept: "application/json" },
+  });
+  assert.equal((await beforeLeave.json()).latest.id, "406");
+
+  const left = await request("/api/telegram/webhook", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      update_id: 54,
+      message: {
+        message_id: 11,
+        date: 1_700_000_120,
+        chat: { id: -100700, type: "supergroup", title: "Группа без администратора" },
+        left_chat_member: { id: 405, first_name: "Следующий", last_name: "Зритель" },
+      },
+    }),
+  });
+  assert.equal(left.status, 200);
+  assert.equal((await left.json()).removed, true);
+
+  const stillCurrent = await request(`/api/subscribers?after=0&key=${installation.overlayKey}`, {
+    headers: { accept: "application/json" },
+  });
+  assert.equal((await stillCurrent.json()).latest.id, "406");
+
+  const currentLeft = await request("/api/telegram/webhook", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      update_id: 55,
+      message: {
+        message_id: 12,
+        date: 1_700_000_130,
+        chat: { id: -100700, type: "supergroup", title: "Группа без администратора" },
+        left_chat_member: { id: 406, first_name: "Последний", last_name: "Зритель" },
+      },
+    }),
+  });
+  assert.equal(currentLeft.status, 200);
+  assert.equal((await currentLeft.json()).removed, true);
+
+  const restored = await request(`/api/subscribers?after=0&key=${installation.overlayKey}`, {
+    headers: { accept: "application/json" },
+  });
+  const restoredBody = await restored.json();
+  assert.equal(restoredBody.latest.id, "404");
+  assert.equal(restoredBody.latest.name, "Новый Зритель");
+  assert.ok(restoredBody.events.every((event) => event.id !== "405" && event.id !== "406"));
+
   const originalFetch = globalThis.fetch;
   const telegramCalls = [];
   process.env.BOT_TOKEN = "test-token";
@@ -385,6 +465,21 @@ test("self-service flow creates a private overlay, changes style and sends a tes
   assert.equal(forbidden.status, 200);
   assert.equal((await forbidden.json()).forbidden, true);
 
+  const previousJoin = await request("/api/telegram/webhook", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      update_id: 45_1,
+      message: {
+        message_id: 7,
+        date: 1_700_000_090,
+        chat: { id: -100500, type: "supergroup", title: "Test channel", username: "test_channel" },
+        new_chat_members: [{ id: 776, first_name: "Previous", last_name: "Subscriber" }],
+      },
+    }),
+  });
+  assert.equal(previousJoin.status, 200);
+
   const realJoin = await request("/api/telegram/webhook", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -435,6 +530,32 @@ test("self-service flow creates a private overlay, changes style and sends a tes
   const caughtUpBody = await caughtUp.json();
   assert.equal(caughtUpBody.latest.name, "Real Subscriber");
   assert.deepEqual(caughtUpBody.events, []);
+
+  const unsubscribe = await request("/api/telegram/webhook", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      update_id: 47,
+      chat_member: {
+        chat: { id: -100500, type: "supergroup", title: "Test channel", username: "test_channel" },
+        from: { id: 101, first_name: "Streamer" },
+        old_chat_member: { status: "member", user: { id: 777, first_name: "Real", last_name: "Subscriber" } },
+        new_chat_member: { status: "left", user: { id: 777, first_name: "Real", last_name: "Subscriber" } },
+        date: 1_700_000_200,
+      },
+    }),
+  });
+  assert.equal(unsubscribe.status, 200);
+  assert.equal((await unsubscribe.json()).removed, true);
+
+  const restoredSnapshot = await request(
+    `/api/subscribers?after=${snapshotBody.cursor}&key=${installation.overlayKey}`,
+    { headers: { accept: "application/json" } },
+  );
+  const restoredSnapshotBody = await restoredSnapshot.json();
+  assert.equal(restoredSnapshotBody.latest.id, "776");
+  assert.equal(restoredSnapshotBody.latest.name, "Previous Subscriber");
+  assert.deepEqual(restoredSnapshotBody.events, []);
 
   const privateSnapshot = await request("/api/subscribers?after=0&key=wrong-key", {
     headers: { accept: "application/json" },

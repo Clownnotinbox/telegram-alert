@@ -98,6 +98,7 @@ type D1DatabaseLike = {
 
 const memory = globalThis as typeof globalThis & {
   __subscriberEvents?: Array<SubscriberRecord & { eventKey: string }>;
+  __subscriberSequence?: number;
   __overlaySettings?: OverlaySettings;
   __streamerInstallations?: StreamerInstallation[];
   __pgPool?: Pool;
@@ -552,9 +553,51 @@ export async function recordSubscriber(input: NewSubscriber): Promise<Subscriber
   const store = memoryEvents();
   const existing = store.find((event) => event.eventKey === input.eventKey);
   if (existing) return existing;
-  const next = { ...input, installationId, sequence: (store.at(-1)?.sequence ?? 0) + 1 };
+  const sequence = Math.max(memory.__subscriberSequence ?? 0, store.at(-1)?.sequence ?? 0) + 1;
+  memory.__subscriberSequence = sequence;
+  const next = { ...input, installationId, sequence };
   store.push(next);
   return next;
+}
+
+export async function removeSubscriber(installationId: string, externalId: string) {
+  const pool = await postgresPool();
+  if (pool) {
+    const result = await pool.query(
+      `DELETE FROM subscriber_events
+       WHERE installation_id = $1 AND external_id = $2
+         AND source NOT IN ('telegram-test', 'test')`,
+      [installationId, externalId],
+    );
+    return Boolean(result.rowCount);
+  }
+
+  const db = await d1Database();
+  if (db) {
+    const existing = await db.prepare(
+      `SELECT sequence FROM subscriber_events
+       WHERE installation_id = ? AND external_id = ?
+         AND source NOT IN ('telegram-test', 'test') LIMIT 1`,
+    ).bind(installationId, externalId).first<{ sequence: number }>();
+    if (!existing) return false;
+    await db.prepare(
+      `DELETE FROM subscriber_events
+       WHERE installation_id = ? AND external_id = ?
+         AND source NOT IN ('telegram-test', 'test')`,
+    ).bind(installationId, externalId).run();
+    return true;
+  }
+
+  const store = memoryEvents();
+  const retained = store.filter((event) => (
+    event.installationId !== installationId
+      || event.id !== externalId
+      || event.source === "telegram-test"
+      || event.source === "test"
+  ));
+  const removed = retained.length !== store.length;
+  if (removed) store.splice(0, store.length, ...retained);
+  return removed;
 }
 
 export async function installationHasSubscriber(installationId: string, externalId: string) {

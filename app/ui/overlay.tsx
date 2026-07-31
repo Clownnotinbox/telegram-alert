@@ -18,6 +18,15 @@ type Snapshot = {
   community: OverlayCommunity | null;
 };
 
+type QueuedTransition = {
+  subscriber: Subscriber | null;
+  celebrate: boolean;
+};
+
+function sameSubscriber(left: Subscriber | null, right: Subscriber | null) {
+  return left?.sequence === right?.sequence && left?.id === right?.id;
+}
+
 /* Noir dissolves the nickname instead of cutting to the next one, so the swap
    has to wait out the longer fade — otherwise the name changes while the old
    one is still faintly on screen.  Both values follow the noir-signal-out /
@@ -93,7 +102,7 @@ export function Overlay({
   const [phase, setPhase] = useState<"idle" | "exit" | "enter">(preview && previewPhase ? previewPhase : "idle");
   const [celebrating, setCelebrating] = useState(false);
   const [labelFading, setLabelFading] = useState(false);
-  const [queue, setQueue] = useState<Subscriber[]>([]);
+  const [queue, setQueue] = useState<QueuedTransition[]>([]);
   const [style, setStyle] = useState<OverlayStyle>(preview && previewStyle ? previewStyle : "noir");
   const cursor = useRef(0);
   const initialized = useRef(false);
@@ -123,6 +132,7 @@ export function Overlay({
         const response = await fetch(`/api/subscribers?after=${cursor.current}${key}`, { cache: "no-store" });
         if (response.ok) {
           const data = (await response.json()) as Snapshot;
+          const previousPersistent = persistentSubscriber.current;
           if (!preview) setStyle(data.settings.style);
           if (!preview) setCommunity(data.community);
           if (!preview) persistentSubscriber.current = data.latest;
@@ -132,7 +142,15 @@ export function Overlay({
             cursor.current = data.cursor ?? data.latest?.sequence ?? 0;
           } else if (data.events.length) {
             cursor.current = Math.max(cursor.current, ...data.events.map((event) => event.sequence));
-            setQueue((current) => [...current, ...data.events]);
+            setQueue((current) => [
+              ...current,
+              ...data.events.map((event) => ({ subscriber: event, celebrate: true })),
+            ]);
+          } else if (!preview && !sameSubscriber(previousPersistent, data.latest)) {
+            cursor.current = data.cursor ?? data.latest?.sequence ?? 0;
+            // A deletion has no new event sequence. The snapshot is authoritative,
+            // so replace stale queued joins with the subscriber who is active now.
+            setQueue([{ subscriber: data.latest, celebrate: false }]);
           }
         }
       } catch {
@@ -152,29 +170,35 @@ export function Overlay({
   useEffect(() => {
     if (animating.current || queue.length === 0) return;
     animating.current = true;
-    const next = queue[0];
+    const transition = queue[0];
+    const next = transition.subscriber;
     const timings = swapTimings(styleRef.current);
     setPhase("exit");
 
     const swapTimer = setTimeout(() => {
       setSubscriber(next);
-      setCelebrating(true);
+      setCelebrating(transition.celebrate && Boolean(next));
+      setLabelFading(false);
       setPhase("enter");
-      playGentleChime();
+      if (transition.celebrate && next) playGentleChime();
     }, timings.swap);
     const settleTimer = setTimeout(() => {
       setPhase("idle");
       animating.current = false;
       setQueue((current) => current.slice(1));
     }, timings.settle);
-    const labelFadeTimer = setTimeout(() => setLabelFading(true), CELEBRATION_MS - LABEL_FADE_MS);
-    const toastTimer = setTimeout(() => {
-      setCelebrating(false);
-      setLabelFading(false);
-    }, CELEBRATION_MS);
-    animationTimers.current.push(swapTimer, settleTimer, labelFadeTimer, toastTimer);
+    animationTimers.current.push(swapTimer, settleTimer);
 
-    if (next.source === "telegram-test" || next.source === "test") {
+    if (transition.celebrate) {
+      const labelFadeTimer = setTimeout(() => setLabelFading(true), CELEBRATION_MS - LABEL_FADE_MS);
+      const toastTimer = setTimeout(() => {
+        setCelebrating(false);
+        setLabelFading(false);
+      }, CELEBRATION_MS);
+      animationTimers.current.push(labelFadeTimer, toastTimer);
+    }
+
+    if (next && (next.source === "telegram-test" || next.source === "test")) {
       const restoreTimer = setTimeout(() => {
         if (animating.current || subscriberRef.current?.sequence !== next.sequence) return;
         animating.current = true;
@@ -189,7 +213,7 @@ export function Overlay({
           const restoredSequence = persistentSubscriber.current?.sequence ?? 0;
           setPhase("idle");
           animating.current = false;
-          setQueue((current) => current.filter((event) => event.sequence > restoredSequence));
+          setQueue((current) => current.filter((item) => (item.subscriber?.sequence ?? 0) > restoredSequence));
         }, restoreTimings.settle);
         animationTimers.current.push(restoreSwapTimer, restoreSettleTimer);
       }, CELEBRATION_MS);
