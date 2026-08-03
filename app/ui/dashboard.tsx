@@ -7,6 +7,7 @@ import type { OverlayStyle } from "./types";
 const STYLE_NAMES: Record<OverlayStyle, string> = {
   noir: "Нуар",
   "noir-wide": "Нуар 3:2",
+  "noir-animated": "С анимацией",
   anime: "Аниме",
   graphite: "Графит",
   paper: "Светлый",

@@ -1,7 +1,7 @@
 import { Overlay } from "../ui/overlay";
 import type { OverlayStyle } from "../ui/types";
 
-const PREVIEW_STYLES = new Set<OverlayStyle>(["noir", "noir-wide", "anime", "graphite", "paper", "mono"]);
+const PREVIEW_STYLES = new Set<OverlayStyle>(["noir", "noir-wide", "noir-animated", "anime", "graphite", "paper", "mono"]);
 
 export default async function OverlayPage({
   searchParams,
@@ -18,6 +18,10 @@ export default async function OverlayPage({
     : null;
   const requestedPhase = Array.isArray(params.phase) ? params.phase[0] : params.phase;
   const previewPhase = requestedPhase === "exit" || requestedPhase === "enter" ? requestedPhase : null;
+  /* «С анимацией» spends most of a cycle face up, which makes checking the back
+     a waiting game. ?side=back opens on it and then carries on turning. */
+  const requestedSide = Array.isArray(params.side) ? params.side[0] : params.side;
+  const previewSide = requestedSide === "front" || requestedSide === "back" ? requestedSide : null;
   return (
     <Overlay
       preview={params.preview !== undefined}
@@ -26,6 +30,7 @@ export default async function OverlayPage({
       previewUsername={username === undefined ? undefined : username.trim().replace(/^@/, "").slice(0, 64) || null}
       previewPhase={previewPhase}
       previewStyle={previewStyle}
+      previewSide={previewSide}
     />
   );
 }

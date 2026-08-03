@@ -56,6 +56,27 @@ test("renders the OBS overlay", async () => {
   assert.match(wideHtml, /--noir-name-size:84px/);
   assert.doesNotMatch(wideHtml, /Открыть Telegram/);
 
+  const animatedResponse = await request("/overlay?preview=1&style=noir-animated");
+  assert.equal(animatedResponse.status, 200);
+  const animatedHtml = await animatedResponse.text();
+  assert.match(animatedHtml, /data-style="noir-wide"/);
+  assert.match(animatedHtml, /\/noir-wide-source\.png\?v=1/);
+  assert.match(animatedHtml, /--noir-name-size:84px/);
+  assert.match(animatedHtml, /is-noir-animated/);
+  assert.match(animatedHtml, /noir-animated-face/);
+  assert.match(animatedHtml, /noir-animated-back/);
+  assert.match(animatedHtml, /LAST TG FOLLOWER/);
+  assert.match(animatedHtml, /noir-animated-back-name/);
+  assert.match(animatedHtml, /--noir-back-name-size:112px/);
+  assert.equal(animatedHtml.match(/@anna_live/g).length, 2, "the nickname is on both sides");
+  assert.doesNotMatch(wideHtml, /LAST TG FOLLOWER/, "«Нуар 3:2» has no back side");
+  assert.doesNotMatch(wideHtml, /noir-animated/, "«Нуар 3:2» carries none of the animated markup");
+
+  const backSideResponse = await request("/overlay?preview=1&style=noir-animated&side=back");
+  assert.equal(backSideResponse.status, 200);
+  assert.match(await backSideResponse.text(), /is-current noir-animated-back/, "?side=back opens on the back plate");
+  assert.match(animatedHtml, /is-current noir-animated-face/, "and without it the card opens on its face");
+
   const longestUsername = "a".repeat(32);
   const longMainResponse = await request(`/overlay?preview=1&style=noir&username=${longestUsername}`);
   const longMainHtml = await longMainResponse.text();
@@ -66,6 +87,11 @@ test("renders the OBS overlay", async () => {
   const longWideResponse = await request(`/overlay?preview=1&style=noir-wide&username=${longestUsername}`);
   const longWideHtml = await longWideResponse.text();
   assert.match(longWideHtml, /--noir-name-size:42px/);
+
+  const longAnimatedResponse = await request(`/overlay?preview=1&style=noir-animated&username=${longestUsername}`);
+  const longAnimatedHtml = await longAnimatedResponse.text();
+  assert.match(longAnimatedHtml, /--noir-name-size:42px/);
+  assert.match(longAnimatedHtml, /--noir-back-name-size:57px/, "the back plate starts a long nickname wider than the face strip does");
 
   const fallbackName = "A".repeat(60);
   const fallbackResponse = await request(`/overlay?preview=1&style=noir&username=&name=${fallbackName}`);
@@ -112,6 +138,70 @@ test("noir nickname animation fades without shaking", async () => {
   assert.doesNotMatch(keyframes, /translate|skew|clip-path|transform\s*:/);
   assert.match(keyframes, /filter: blur/);
   assert.doesNotMatch(keyframes, /brightness/, "a brightness ramp flashes the white nickname");
+});
+
+test("«С анимацией» crumbles one side away and builds the other back", async () => {
+  const [css, card] = await Promise.all([
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/ui/subscriber-card.tsx", import.meta.url), "utf8"),
+  ]);
+  const block = css.slice(
+    css.indexOf(".subscriber-wrap.is-noir-animated .subscriber-card"),
+    css.indexOf('.subscriber-wrap[data-style="anime"] {'),
+  );
+  assert.ok(block.length > 400, "globals.css must keep the noir-animated block of its own");
+
+  assert.match(block, /mask-image: url\("\/noir-dissolve-mask\.png/);
+  assert.match(block, /-webkit-mask-image: url\("\/noir-dissolve-mask\.png/, "OBS may predate unprefixed masks");
+  assert.match(block, /mask-size: 260% 100%/, "the mask has to overhang the plate at both ends of the sweep");
+  assert.doesNotMatch(block, /steps\(|skew|brightness|@keyframes/, "no shake, glitch or flash");
+
+  /* The card carries the classes for exactly as long as the sweeps run, so the
+     two have to agree: a shorter class than animation cuts the plate off part
+     way through, a longer one leaves it sitting on an empty card. */
+  const sweep = /animation: noir-dissolve-out ([\d.]+)s/.exec(block);
+  const rebuild = /animation: noir-dissolve-in ([\d.]+)s linear ([\d.]+)s/.exec(block);
+  assert.ok(sweep && rebuild, "globals.css must keep a duration for each sweep");
+  const scheduled = /DISSOLVE_MS = ([\d_]+)/.exec(card);
+  assert.ok(scheduled, "subscriber-card.tsx must schedule the sweeps");
+  const scheduledMs = Number(scheduled[1].replaceAll("_", ""));
+  assert.equal(Number(sweep[1]) * 1000, scheduledMs, "the crumble runs for as long as it is scheduled");
+  assert.equal(Number(rebuild[1]) * 1000, scheduledMs, "and so does the rebuild");
+  assert.equal(Number(rebuild[2]) * 1000, scheduledMs, "the rebuild waits out the whole crumble before it starts");
+
+  const sweepsAt = css.indexOf("@keyframes noir-dissolve-out");
+  const sweeps = css.slice(sweepsAt, css.indexOf("@media", sweepsAt));
+  assert.match(sweeps, /@keyframes noir-dissolve-out \{\s*from \{[^}]*mask-position: 100% 0/, "out starts on the solid end");
+  assert.match(sweeps, /@keyframes noir-dissolve-in \{\s*from \{[^}]*mask-position: 0% 0/, "in starts on the empty end");
+  assert.doesNotMatch(sweeps, /translate|scale|rotate|opacity/, "only the mask moves");
+
+  assert.match(card, /LAST TG FOLLOWER/);
+  assert.match(css, /aspect-ratio: 1280 \/ 853/, "both 3:2 styles stay 1280 × 853");
+});
+
+test("the dissolve mask is a sweep, not a curtain", async () => {
+  const bytes = await readFile(new URL("../public/noir-dissolve-mask.png", import.meta.url));
+  assert.deepEqual([...bytes.slice(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+  const { width, height } = await sharp(bytes).metadata();
+  assert.equal(width, 1300);
+  assert.equal(height, 333);
+
+  const { data, info } = await sharp(bytes).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const alpha = (x, y) => data[(y * info.width + x) * info.channels + 3];
+  assert.equal(alpha(0, height >> 1), 0, "the plate is wholly gone at one end of the slide");
+  assert.equal(alpha(width - 1, height >> 1), 255, "and wholly there at the other");
+
+  /* Somewhere in the middle both survive side by side — that band is the effect;
+     a mask without one would wipe the plate like a curtain instead. */
+  const middle = [];
+  for (let x = 0; x < width; x += 1) middle.push(alpha(x, height >> 1));
+  const firstSolid = middle.indexOf(255);
+  const lastGone = middle.lastIndexOf(0);
+  assert.ok(lastGone > firstSolid + 40, `the crumbling band is only ${lastGone - firstSolid}px wide`);
+
+  /* The top of the plate goes before the bottom, so the front leans. */
+  const goneUpTo = (y) => { let last = -1; for (let x = 0; x < width; x += 1) if (alpha(x, y) === 0) last = x; return last; };
+  assert.ok(goneUpTo(4) > goneUpTo(height - 5), "the top-left corner has to be the first thing to leave");
 });
 
 test("noir changes the nickname only while it is invisible", async () => {
@@ -639,7 +729,9 @@ test("panel stays compact and style shows visual choices in Telegram", async () 
     assert.equal(preview.body.reply_markup.inline_keyboard[0][0].callback_data, `style:${installation.id}:noir`);
     assert.equal(preview.body.reply_markup.inline_keyboard[0][1].callback_data, `style:${installation.id}:noir-wide`);
     assert.match(preview.body.reply_markup.inline_keyboard[0][1].text, /Нуар 3:2 · 1280×853/);
-    assert.equal(preview.body.reply_markup.inline_keyboard[1][0].callback_data, `style:${installation.id}:anime`);
+    assert.equal(preview.body.reply_markup.inline_keyboard[1][0].callback_data, `style:${installation.id}:noir-animated`);
+    assert.match(preview.body.reply_markup.inline_keyboard[1][0].text, /С анимацией · 1280×853/);
+    assert.equal(preview.body.reply_markup.inline_keyboard[2][0].callback_data, `style:${installation.id}:anime`);
 
     calls.length = 0;
     const chooseWide = await request("/api/telegram/webhook", {
@@ -663,11 +755,32 @@ test("panel stays compact and style shows visual choices in Telegram", async () 
     assert.match(wideEdit.body.reply_markup.inline_keyboard[0][1].text, /^✓ /);
 
     calls.length = 0;
-    const chooseStyle = await request("/api/telegram/webhook", {
+    const chooseAnimated = await request("/api/telegram/webhook", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         update_id: 84,
+        callback_query: {
+          id: "style-photo-animated",
+          from: { id: ownerId },
+          data: `style:${installation.id}:noir-animated`,
+          message: { message_id: 902, chat: { id: ownerId, type: "private" }, photo: [{}] },
+        },
+      }),
+    });
+    assert.equal(chooseAnimated.status, 200);
+    const animatedEdit = calls.find((call) => call.method === "editMessageCaption");
+    assert.ok(animatedEdit);
+    assert.match(animatedEdit.body.caption, /Сейчас: <b>С анимацией<\/b>/);
+    assert.match(animatedEdit.body.caption, /Размер OBS: <code>1280 × 853<\/code>/);
+    assert.match(animatedEdit.body.reply_markup.inline_keyboard[1][0].text, /^✓ /);
+
+    calls.length = 0;
+    const chooseStyle = await request("/api/telegram/webhook", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        update_id: 85,
         callback_query: {
           id: "style-photo",
           from: { id: ownerId },
@@ -680,7 +793,7 @@ test("panel stays compact and style shows visual choices in Telegram", async () 
     const edit = calls.find((call) => call.method === "editMessageCaption");
     assert.ok(edit);
     assert.match(edit.body.caption, /Сейчас: <b>Только текст<\/b>/);
-    assert.equal(edit.body.reply_markup.inline_keyboard[2][1].text, "✓ Только текст");
+    assert.equal(edit.body.reply_markup.inline_keyboard[3][1].text, "✓ Только текст");
   } finally {
     globalThis.fetch = originalFetch;
     delete process.env.BOT_TOKEN;

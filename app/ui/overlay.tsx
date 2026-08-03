@@ -38,7 +38,9 @@ const SWAP_TIMINGS = {
 } as const;
 
 function swapTimings(style: OverlayStyle) {
-  return style === "noir" || style === "noir-wide" ? SWAP_TIMINGS.noir : SWAP_TIMINGS.base;
+  return style === "noir" || style === "noir-wide" || style === "noir-animated"
+    ? SWAP_TIMINGS.noir
+    : SWAP_TIMINGS.base;
 }
 
 /* The caption above the nickname flips back on its own once the celebration is
@@ -79,6 +81,7 @@ export function Overlay({
   previewUsername,
   previewPhase,
   previewStyle,
+  previewSide,
 }: {
   preview: boolean;
   overlayKey: string | null;
@@ -86,6 +89,7 @@ export function Overlay({
   previewUsername: string | null | undefined;
   previewPhase: "exit" | "enter" | null;
   previewStyle: OverlayStyle | null;
+  previewSide: "front" | "back" | null;
 }) {
   const [subscriber, setSubscriber] = useState<Subscriber | null>(
     preview
@@ -234,6 +238,7 @@ export function Overlay({
         celebrating={celebrating}
         labelFading={labelFading}
         style={style}
+        previewSide={previewSide}
       />
     </main>
   );

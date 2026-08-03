@@ -4,13 +4,23 @@
 /* eslint-disable @next/next/no-img-element */
 
 import QRCode from "qrcode";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode, RefObject } from "react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { OverlayCommunity, OverlayStyle, Subscriber } from "./types";
 
 const ANIME_QR_URL = "https://t.me/xedat1va";
 const MASCOT_ASSET_VERSION = 6;
 const IDENTITY_PIXELS = Array.from({ length: 48 }, (_, index) => index);
+
+/* «С анимацией» is the 3:2 noir plate that crumbles away pixel by pixel and
+   comes back as the other side: the face is that art untouched, the back is a
+   plate of its own.  The holds below are the times a side sits there readable —
+   the sweeps are not counted into them, because a plate that is halfway gone is
+   not a plate anyone is reading.  DISSOLVE_MS follows the two animations in
+   globals.css: one sweep out, then one back in. */
+const DISSOLVE_MS = 1_800;
+const FACE_HOLD_MS = 12_600;
+const BACK_HOLD_MS = 5_200;
 
 function initials(name: string) {
   return name
@@ -33,12 +43,28 @@ function noirNameSize(length: number, wide: boolean) {
   return Math.max(minSize, Math.min(maxSize, Math.floor(widthBudget / Math.max(length, 1))));
 }
 
+/* The back plate hands the nickname the full width of its rules — four fifths of
+   the card, against the 37% strip the art leaves on the face — so it starts from
+   a longer budget and a bigger cap, and is then measured down from there like
+   every other plate.  The cap is what a short nickname gets, and it is set by how
+   large the plate can carry a line rather than by how large it needs to be: this
+   side has to stay readable when the whole card is a few hundred pixels wide. */
+function noirBackNameSize(length: number) {
+  return Math.max(32, Math.min(112, Math.floor(1900 / Math.max(length, 1))));
+}
+
 /* The rendered width of the line, which scrollWidth cannot report through the
-   overflow: clip the noir plates use. */
+   overflow: clip the noir plates use.  «С анимацией» can be part way through a
+   turn when a nickname is swapped, and a turning card foreshortens everything
+   measured on it — the element loses exactly as much width as the line does, so
+   its own two widths give the factor back and the answer stays in layout px. */
 function inkWidth(element: HTMLElement) {
   const range = document.createRange();
   range.selectNodeContents(element);
-  return range.getBoundingClientRect().width;
+  const ink = range.getBoundingClientRect().width;
+  const projected = element.getBoundingClientRect().width;
+  const laid = element.clientWidth;
+  return projected > 0 && laid > 0 ? (ink * laid) / projected : ink;
 }
 
 function QrMark({
@@ -141,6 +167,155 @@ function StyledQrMark({ value }: { value: string }) {
   );
 }
 
+/* The size a plate starts from is worked out from the character count, which is
+   all the server can do — a nickname of all «w» still overruns the plate, and
+   there is nowhere for it to spill.  Measure the real line, step the size down
+   to the smallest we are willing to show, and cut the tail off past that.  Both
+   plates fit their nickname this way; only the numbers and the property differ. */
+function useFittedName<T extends HTMLElement>(
+  ref: RefObject<T | null>,
+  text: string,
+  property: string,
+  startSize: number,
+  minSize: number,
+  enabled: boolean,
+) {
+  useEffect(() => {
+    const element = ref.current;
+    if (!element || !enabled) return;
+
+    const fit = () => {
+      const available = element.clientWidth;
+      if (!available) return;
+
+      element.textContent = text;
+      let size = startSize;
+      let ink = 0;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        element.style.setProperty(property, `${size}px`);
+        ink = inkWidth(element);
+        if (ink <= available) return;
+        if (size <= minSize) break;
+        size = Math.max(minSize, Math.floor((size * available) / ink));
+      }
+
+      const characters = Array.from(text);
+      let keep = Math.min(characters.length - 1, Math.max(1, Math.floor((characters.length * available) / ink) - 1));
+      element.textContent = `${characters.slice(0, keep).join("")}…`;
+      while (keep > 1 && inkWidth(element) > available) {
+        keep -= 1;
+        element.textContent = `${characters.slice(0, keep).join("")}…`;
+      }
+    };
+
+    /* Fitting resizes the very element being observed, and doing that inside the
+       observer's own callback is what makes a browser report undelivered
+       notifications.  A frame's delay takes the work out of that delivery loop;
+       the second pass then settles on the same size and nothing resizes again. */
+    let frame = 0;
+    const schedule = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(fit);
+    };
+
+    fit();
+    const observer = new ResizeObserver(schedule);
+    observer.observe(element);
+
+    /* The first pass can measure a face the browser then swaps out from under
+       it: Firefox lays these plates out in the default sans before resolving
+       «Arial Narrow», which is 17% narrower, and a nickname fitted against the
+       wider one comes out needlessly small.  The element keeps its width through
+       that swap, so no resize reports it and document.fonts.ready has already
+       settled — nothing announces it, and it has to be looked for.  Three
+       re-reads cover it; each one that finds nothing changed costs a measure and
+       resizes nothing. */
+    const rereads = [120, 350, 800].map((delay) => setTimeout(fit, delay));
+
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+      rereads.forEach(clearTimeout);
+    };
+  }, [enabled, minSize, property, ref, startSize, text]);
+}
+
+/* A component of its own so the cycle starts over whenever the style is switched
+   on — the card opens on its face rather than carrying on from wherever it was
+   left — and so «Нуар 3:2» never carries the timer it does not use. */
+function NoirAnimatedCard({
+  alerting,
+  face,
+  name,
+  startOnBack,
+}: {
+  alerting: boolean;
+  face: ReactNode;
+  name: string;
+  startOnBack: boolean;
+}) {
+  const [showingBack, setShowingBack] = useState(startOnBack);
+  const [sweeping, setSweeping] = useState(false);
+  const backNameRef = useRef<HTMLSpanElement>(null);
+  const backNameSize = noirBackNameSize(Array.from(name).length);
+  useFittedName(backNameRef, name, "--noir-back-name-size", backNameSize, 32, true);
+
+  useEffect(() => {
+    /* A sweep is never cut short: half a plate blinking into the other one is the
+       one thing here that would read as a glitch rather than as an effect. */
+    if (sweeping) return;
+    /* Never leave the face while a subscriber is arriving — and if one arrives
+       while the back is up, start back towards the face at once. */
+    if (alerting && !showingBack) return;
+    const hold = alerting ? 0 : showingBack ? BACK_HOLD_MS : FACE_HOLD_MS;
+    const timer = setTimeout(() => {
+      setShowingBack((back) => !back);
+      setSweeping(true);
+    }, hold);
+    return () => clearTimeout(timer);
+  }, [alerting, showingBack, sweeping]);
+
+  /* Out and then back in, one after the other: the plate is wholly gone before
+     the other starts to build, which is what makes it a change of side rather
+     than a cross-fade. */
+  useEffect(() => {
+    if (!sweeping) return;
+    const timer = setTimeout(() => setSweeping(false), DISSOLVE_MS * 2);
+    return () => clearTimeout(timer);
+  }, [showingBack, sweeping]);
+
+  const layer = (shown: boolean) => [
+    "noir-animated-layer",
+    shown ? "is-current" : "",
+    sweeping ? (shown ? "is-entering" : "is-leaving") : "",
+  ].filter(Boolean).join(" ");
+
+  return (
+    <>
+      <div className={`${layer(!showingBack)} noir-animated-face`}>{face}</div>
+      {/* Written from scratch rather than mirrored: nothing of the face is
+          repeated here, so what builds back up is a plate, not a reflection. */}
+      <div className={`${layer(showingBack)} noir-animated-back`}>
+        <span className="noir-animated-back-frame" aria-hidden="true" />
+        <div className="noir-animated-back-copy">
+          <span className="noir-animated-back-rule" aria-hidden="true" />
+          <div className="noir-animated-back-lines">
+            <span className="noir-animated-back-title">LAST TG FOLLOWER</span>
+            <span
+              ref={backNameRef}
+              className="noir-animated-back-name"
+              style={{ "--noir-back-name-size": `${backNameSize}px` } as CSSProperties}
+            >
+              {name}
+            </span>
+          </div>
+          <span className="noir-animated-back-rule" aria-hidden="true" />
+        </div>
+      </div>
+    </>
+  );
+}
+
 export function SubscriberCard({
   subscriber,
   community,
@@ -148,6 +323,7 @@ export function SubscriberCard({
   celebrating,
   labelFading,
   style,
+  previewSide,
 }: {
   subscriber: Subscriber | null;
   community: OverlayCommunity | null;
@@ -155,12 +331,18 @@ export function SubscriberCard({
   celebrating: boolean;
   labelFading: boolean;
   style: OverlayStyle;
+  previewSide: "front" | "back" | null;
 }) {
   const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
 
   const animeLike = style === "anime";
   const noirLike = style === "noir";
-  const noirWideLike = style === "noir-wide";
+  const noirAnimated = style === "noir-animated";
+  const noirWideLike = style === "noir-wide" || noirAnimated;
+  /* data-style stays noir-wide so the face is that art down to the pixel — the
+     turn and the back plate hang off .is-noir-animated instead, and nothing
+     written for them can reach the static style. */
+  const renderedStyle = noirWideLike ? "noir-wide" : style;
   const waiting = !subscriber;
   const name = subscriber?.name ?? "Ждём нового подписчика";
   const displayedName = (noirLike || noirWideLike) && subscriber?.username
@@ -177,46 +359,14 @@ export function SubscriberCard({
     : undefined;
   const nameRef = useRef<HTMLHeadingElement>(null);
   const noirPlate = noirLike || noirWideLike;
-
-  /* noirNameSize assumes an average glyph, which is all the server can do — a
-     nickname of all «w» still overruns the plate the art draws, and there is
-     nowhere for it to spill.  Measure the real line, step the size down to the
-     smallest we are willing to show, and cut the tail off past that. */
-  useEffect(() => {
-    const element = nameRef.current;
-    if (!element || !noirPlate) return;
-
-    const minSize = noirWideLike ? 42 : 28;
-
-    const fit = () => {
-      const available = element.clientWidth;
-      if (!available) return;
-
-      element.textContent = displayedName;
-      let size = noirNameSize(displayedNameLength, noirWideLike);
-      let ink = 0;
-      for (let attempt = 0; attempt < 3; attempt += 1) {
-        element.style.setProperty("--noir-name-size", `${size}px`);
-        ink = inkWidth(element);
-        if (ink <= available) return;
-        if (size <= minSize) break;
-        size = Math.max(minSize, Math.floor((size * available) / ink));
-      }
-
-      const characters = Array.from(displayedName);
-      let keep = Math.min(characters.length - 1, Math.max(1, Math.floor((characters.length * available) / ink) - 1));
-      element.textContent = `${characters.slice(0, keep).join("")}…`;
-      while (keep > 1 && inkWidth(element) > available) {
-        keep -= 1;
-        element.textContent = `${characters.slice(0, keep).join("")}…`;
-      }
-    };
-
-    fit();
-    const observer = new ResizeObserver(fit);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [displayedName, displayedNameLength, noirPlate, noirWideLike]);
+  useFittedName(
+    nameRef,
+    displayedName,
+    "--noir-name-size",
+    noirNameSize(displayedNameLength, noirWideLike),
+    noirWideLike ? 42 : 28,
+    noirPlate,
+  );
 
   const nameClass = [
     displayedNameLength <= 8 ? "is-short" : "",
@@ -224,92 +374,114 @@ export function SubscriberCard({
     displayedNameLength > 38 ? "is-very-long" : "",
   ].filter(Boolean).join(" ");
 
+  const face = (
+    <>
+      <span className="frame-corner frame-corner-tl" aria-hidden="true" />
+      <span className="frame-corner frame-corner-tr" aria-hidden="true" />
+      <span className="frame-corner frame-corner-bl" aria-hidden="true" />
+      <span className="frame-corner frame-corner-br" aria-hidden="true" />
+
+      {noirLike && (
+        <div className="noir-art" aria-hidden="true">
+          <img src="/noir-portrait.webp?v=1" alt="" />
+        </div>
+      )}
+
+      {noirWideLike && (
+        <div className="noir-wide-art" aria-hidden="true">
+          <img src="/noir-wide-source.png?v=1" alt="" />
+        </div>
+      )}
+
+      <div className="anime-mascot" aria-hidden="true">
+        <img className="mascot-still" src={`/mascot-anime-static.png?v=${MASCOT_ASSET_VERSION}`} alt="" />
+      </div>
+
+      <div className="subscriber-identity">
+        <div className="avatar-shell" aria-hidden="true">
+          <div className="avatar">
+            {/* Telegram file URLs are proxied so the bot token never reaches OBS. */}
+            {subscriber?.avatarUrl && subscriber.avatarUrl !== failedAvatarUrl
+              ? <img src={subscriber.avatarUrl} alt="" onError={() => setFailedAvatarUrl(subscriber.avatarUrl)} />
+              : initials(name)}
+          </div>
+          <span className="avatar-platform">tg</span>
+        </div>
+
+        <div className="subscriber-copy">
+          {!animeLike && !noirPlate && (
+            <div className={`subscriber-label ${labelFading ? "is-swapping" : ""}`}>
+              <span className={`subscriber-indicator ${celebrating ? "is-live" : ""}`} />
+              {celebrating ? "Новый подписчик" : waiting ? "Ожидаем подписчика" : "Последний подписчик"}
+            </div>
+          )}
+          <h2 ref={nameRef} className={`subscriber-name ${nameClass}`} style={animeNameStyle ?? noirNameStyle}>{displayedName}</h2>
+        </div>
+        <div className="identity-pixels" aria-hidden="true">
+          {IDENTITY_PIXELS.map((pixel) => (
+            <i
+              key={pixel}
+              style={{
+                "--pixel-out-delay": `${(pixel % 12) * 7}ms`,
+                "--pixel-in-delay": `${(11 - (pixel % 12)) * 6}ms`,
+                "--pixel-drift": `${((pixel * 7) % 13) - 6}px`,
+              } as CSSProperties}
+            />
+          ))}
+        </div>
+      </div>
+
+      {animeLike && (
+        <footer className="anime-qr">
+          <div className="anime-qr-code">
+            <QrMark value={ANIME_QR_URL} theme="anime" />
+          </div>
+        </footer>
+      )}
+
+      {(noirLike || noirWideLike) && (
+        <footer className={noirWideLike ? "noir-wide-qr" : "noir-qr"}>
+          <div className={noirWideLike ? "noir-wide-qr-code" : "noir-qr-code"}>
+            <StyledQrMark value={community?.url ?? ANIME_QR_URL} />
+          </div>
+        </footer>
+      )}
+
+      {!animeLike && !noirLike && !noirWideLike && community && (
+        <footer className={`community-block ${community.url ? "has-qr" : ""}`}>
+          <div className="community-copy">
+            <span>Telegram-сообщество</span>
+            <strong>{community.title}</strong>
+            {community.url && <small>Наведите камеру, чтобы открыть</small>}
+          </div>
+          {community.url && <QrMark value={community.url} />}
+        </footer>
+      )}
+
+      <div className={`subscriber-progress ${celebrating ? "is-running" : ""}`} />
+    </>
+  );
+
   return (
-    <div className="subscriber-wrap" data-style={style} data-waiting={waiting || undefined} data-testid="subscriber-design">
+    <div
+      className={`subscriber-wrap ${noirAnimated ? "is-noir-animated" : ""}`}
+      data-style={renderedStyle}
+      data-waiting={waiting || undefined}
+      data-testid="subscriber-design"
+    >
       <article className={`subscriber-card phase-${phase}`} aria-live="polite">
-        <span className="frame-corner frame-corner-tl" aria-hidden="true" />
-        <span className="frame-corner frame-corner-tr" aria-hidden="true" />
-        <span className="frame-corner frame-corner-bl" aria-hidden="true" />
-        <span className="frame-corner frame-corner-br" aria-hidden="true" />
-
-        {noirLike && (
-          <div className="noir-art" aria-hidden="true">
-            <img src="/noir-portrait.webp?v=1" alt="" />
-          </div>
-        )}
-
-        {noirWideLike && (
-          <div className="noir-wide-art" aria-hidden="true">
-            <img src="/noir-wide-source.png?v=1" alt="" />
-          </div>
-        )}
-
-        <div className="anime-mascot" aria-hidden="true">
-          <img className="mascot-still" src={`/mascot-anime-static.png?v=${MASCOT_ASSET_VERSION}`} alt="" />
-        </div>
-
-        <div className="subscriber-identity">
-          <div className="avatar-shell" aria-hidden="true">
-            <div className="avatar">
-              {/* Telegram file URLs are proxied so the bot token never reaches OBS. */}
-              {subscriber?.avatarUrl && subscriber.avatarUrl !== failedAvatarUrl
-                ? <img src={subscriber.avatarUrl} alt="" onError={() => setFailedAvatarUrl(subscriber.avatarUrl)} />
-                : initials(name)}
-            </div>
-            <span className="avatar-platform">tg</span>
-          </div>
-
-          <div className="subscriber-copy">
-            {!animeLike && !noirPlate && (
-              <div className={`subscriber-label ${labelFading ? "is-swapping" : ""}`}>
-                <span className={`subscriber-indicator ${celebrating ? "is-live" : ""}`} />
-                {celebrating ? "Новый подписчик" : waiting ? "Ожидаем подписчика" : "Последний подписчик"}
-              </div>
-            )}
-            <h2 ref={nameRef} className={`subscriber-name ${nameClass}`} style={animeNameStyle ?? noirNameStyle}>{displayedName}</h2>
-          </div>
-          <div className="identity-pixels" aria-hidden="true">
-            {IDENTITY_PIXELS.map((pixel) => (
-              <i
-                key={pixel}
-                style={{
-                  "--pixel-out-delay": `${(pixel % 12) * 7}ms`,
-                  "--pixel-in-delay": `${(11 - (pixel % 12)) * 6}ms`,
-                  "--pixel-drift": `${((pixel * 7) % 13) - 6}px`,
-                } as CSSProperties}
-              />
-            ))}
-          </div>
-        </div>
-
-        {animeLike && (
-          <footer className="anime-qr">
-            <div className="anime-qr-code">
-              <QrMark value={ANIME_QR_URL} theme="anime" />
-            </div>
-          </footer>
-        )}
-
-        {(noirLike || noirWideLike) && (
-          <footer className={noirWideLike ? "noir-wide-qr" : "noir-qr"}>
-            <div className={noirWideLike ? "noir-wide-qr-code" : "noir-qr-code"}>
-              <StyledQrMark value={community?.url ?? ANIME_QR_URL} />
-            </div>
-          </footer>
-        )}
-
-        {!animeLike && !noirLike && !noirWideLike && community && (
-          <footer className={`community-block ${community.url ? "has-qr" : ""}`}>
-            <div className="community-copy">
-              <span>Telegram-сообщество</span>
-              <strong>{community.title}</strong>
-              {community.url && <small>Наведите камеру, чтобы открыть</small>}
-            </div>
-            {community.url && <QrMark value={community.url} />}
-          </footer>
-        )}
-
-        <div className={`subscriber-progress ${celebrating ? "is-running" : ""}`} />
+        {/* Exit, enter and the celebration window all belong to the nickname,
+            and the nickname the alert is about is the one on the face. */}
+        {noirAnimated
+          ? (
+            <NoirAnimatedCard
+              alerting={phase !== "idle" || celebrating}
+              face={face}
+              name={displayedName}
+              startOnBack={previewSide === "back"}
+            />
+          )
+          : face}
       </article>
     </div>
   );

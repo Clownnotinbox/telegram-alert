@@ -1158,6 +1158,158 @@ a { -webkit-tap-highlight-color: transparent; }
   box-shadow: 0 0 7px rgba(255,255,255,.7);
 }
 
+/* «С анимацией» — the 3:2 noir plate, crumbled away pixel by pixel and rebuilt
+   as the other side.  It keeps data-style="noir-wide", so everything above draws
+   the face exactly as the static style draws it; the sweep and the back plate
+   hang off .is-noir-animated alone and cannot reach «Нуар 3:2».  The card stays
+   1280 × 853 either way. */
+.subscriber-wrap.is-noir-animated .subscriber-card {
+  isolation: isolate;
+}
+
+/* Both plates are always laid out — the hidden one keeps its box so its nickname
+   can be measured and fitted before it is ever shown — and only one is painted. */
+.noir-animated-layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.noir-animated-layer.is-current,
+.noir-animated-layer.is-leaving,
+.noir-animated-layer.is-entering {
+  opacity: 1;
+}
+
+/* One image, 2.6 plates wide, slid across: solid at one end, empty at the other,
+   with a band of grain between them where the pixels give out.  Moving a mask is
+   something a browser can do without recomputing anything, so the plate underneath
+   — photograph, QR and all — is rasterised once and simply revealed.
+   scripts/generate-dissolve-mask.mjs draws the field. */
+.noir-animated-layer.is-leaving,
+.noir-animated-layer.is-entering {
+  -webkit-mask-image: url("/noir-dissolve-mask.png?v=1");
+  mask-image: url("/noir-dissolve-mask.png?v=1");
+  -webkit-mask-size: 260% 100%;
+  mask-size: 260% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  will-change: mask-position;
+}
+
+/* Out from the top left, back in from the top right — the rebuild is the sweep
+   played backwards, which is what makes the two read as one movement. */
+.noir-animated-layer.is-leaving {
+  animation: noir-dissolve-out 1.8s linear both;
+}
+
+.noir-animated-layer.is-entering {
+  animation: noir-dissolve-in 1.8s linear 1.8s both;
+}
+
+.noir-animated-back {
+  background: #030303;
+}
+
+/* Same inset, same radius and same weight as the frame drawn into the art, so
+   the border reads as one object carrying on around the card. */
+.noir-animated-back-frame {
+  position: absolute;
+  inset: 2.7% 1.97%;
+  border: clamp(1px, .16vw, 2px) solid rgba(255,255,255,.8);
+  border-radius: 2.03% / 3.05%;
+  box-shadow:
+    0 0 5px rgba(255,255,255,.34),
+    0 0 17px rgba(255,255,255,.14),
+    inset 0 0 34px rgba(255,255,255,.055);
+  pointer-events: none;
+}
+
+/* One font size drives the whole plate, and the padding keeps the copy clear of
+   the frame by more than four times the space the frame itself takes. */
+.noir-animated-back-copy {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  inset: 0;
+  gap: .3em;
+  padding: 0 6.5%;
+  font-size: min(8.96vw, 112px);
+}
+
+@supports (container-type: inline-size) {
+  .noir-animated-back { container-type: inline-size; }
+  /* Tied to the card, not the viewport: the plate reads the same in OBS at
+     1280 wide and in a preview pane a third of that. */
+  .noir-animated-back-copy { font-size: 8.96cqw; }
+}
+
+/* One width for the whole plate: the rules and the nickname are bounded by the
+   same 8.93em, so a long nickname is measured down to the rules rather than
+   running past them, and the block reads as one object. */
+.noir-animated-back-lines {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: .18em;
+  width: 8.93em;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.noir-animated-back-rule {
+  width: 8.93em;
+  max-width: 100%;
+  height: clamp(1px, .16vw, 2px);
+  flex: 0 0 auto;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.72) 22%, rgba(255,255,255,.72) 78%, transparent);
+  box-shadow: 0 0 7px rgba(255,255,255,.18);
+}
+
+/* Letter-spacing leaves a gap after the last letter and none before the first,
+   which pushes a centred line half a gap to the left.  Matching that gap with
+   padding on the other side makes the box symmetrical about the wording. */
+.noir-animated-back-title {
+  display: inline-block;
+  padding-left: .42em;
+  color: #eef1f4;
+  font-family: "Bahnschrift Condensed", "Arial Narrow", "Segoe UI", sans-serif;
+  font-size: .48em;
+  font-weight: 600;
+  letter-spacing: .42em;
+  line-height: 1.06;
+  white-space: nowrap;
+  /* Two stops, neither bright: the near one keeps the edge of the letter crisp,
+     the second carries the haze the frames sit in.  A third, wider stop was
+     tried and dropped — over flat black the blurs of neighbouring letters merge
+     into a soft slab behind the line, and the line stops looking printed. */
+  text-shadow:
+    0 0 5px rgba(255,255,255,.4),
+    0 0 18px rgba(255,255,255,.15),
+    0 2px 12px rgba(0,0,0,.6);
+}
+
+/* The nickname the plate is about, in the face's own hand: same family, same
+   weight, same tracking — only the size is measured to this plate. */
+.noir-animated-back-name {
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  color: #fff;
+  font-family: "Bahnschrift Condensed", "Arial Narrow", "Segoe UI", sans-serif;
+  font-size: min(var(--noir-back-name-size, 112px), 8.96vw);
+  font-weight: 600;
+  letter-spacing: .055em;
+  line-height: 1.12;
+  text-align: center;
+  text-shadow:
+    0 0 10px rgba(255,255,255,.42),
+    0 2px 8px #000;
+  white-space: nowrap;
+}
+
 .subscriber-wrap[data-style="anime"] {
   --card-bg: #101733;
   --card-border: rgba(153,231,255,.34);
@@ -1415,6 +1567,20 @@ a { -webkit-tap-highlight-color: transparent; }
   50% { background-position: 100% 68%; }
 }
 
+/* The mask is 2.6 plates wide, so at 100% the plate sits over the solid end of
+   it and at 0% over the empty end, with the crumbling front travelling between
+   the two.  Neither position is a cut — the pixels simply run out from one side
+   to the other, and back in from the other side. */
+@keyframes noir-dissolve-out {
+  from { -webkit-mask-position: 100% 0; mask-position: 100% 0; }
+  to { -webkit-mask-position: 0% 0; mask-position: 0% 0; }
+}
+
+@keyframes noir-dissolve-in {
+  from { -webkit-mask-position: 0% 0; mask-position: 0% 0; }
+  to { -webkit-mask-position: 100% 0; mask-position: 100% 0; }
+}
+
 @media (max-width: 820px) {
   .workspace-grid { grid-template-columns: 1fr; }
   .control-panel { order: -1; }
@@ -1489,6 +1655,13 @@ a { -webkit-tap-highlight-color: transparent; }
   .subscriber-wrap[data-style="noir"] .subscriber-identity,
   .subscriber-wrap[data-style="noir-wide"] .subscriber-identity { grid-template-columns: 1fr; }
   .subscriber-wrap[data-style="noir"] .subscriber-identity::after { display: none; }
+  /* A 108px strip has nothing to crumble into. The face gives up its box so the
+     compact fallback lays out against the card, exactly as it always did. */
+  .noir-animated-back { display: none !important; }
+  .noir-animated-face {
+    display: contents;
+    animation: none !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1497,4 +1670,16 @@ a { -webkit-tap-highlight-color: transparent; }
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
   }
+
+  /* With the sweep gone the change of side would become a cut every few seconds,
+     which is exactly what this preference asks not to happen. The face stays up,
+     whole, and the back plate is never shown. */
+  .noir-animated-face {
+    opacity: 1 !important;
+    animation: none !important;
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+  }
+
+  .noir-animated-back { display: none !important; }
 }
