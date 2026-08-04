@@ -5,6 +5,16 @@ import sharp from "sharp";
 
 const workerUrl = new URL("../dist/server/index.js", import.meta.url);
 
+/* Every @keyframes block whose name starts with the given prefix, and nothing
+   else — slicing to the next @media instead swept up whatever animation was
+   declared after it, which is how the two 3:2 styles started reading each
+   other's keyframes. */
+function keyframes(css, prefix) {
+  const blocks = css.match(new RegExp(`@keyframes ${prefix}-\\w+ \\{(?:[^{}]*\\{[^{}]*\\})*[^{}]*\\}`, "g"));
+  assert.ok(blocks?.length >= 2, `globals.css must declare the ${prefix} keyframes`);
+  return blocks.join("\n");
+}
+
 async function request(path, init = {}) {
   const url = new URL(workerUrl);
   url.searchParams.set("test", `${process.pid}-${Date.now()}-${Math.random()}`);
@@ -88,6 +98,18 @@ test("renders the OBS overlay", async () => {
   assert.equal(animatedHtml.match(/@anna_live/g).length, 2, "the nickname is on both sides");
   assert.doesNotMatch(wideHtml, /LAST TG FOLLOWER/, "«Нуар 3:2» has no back side");
   assert.doesNotMatch(wideHtml, /noir-animated/, "«Нуар 3:2» carries none of the animated markup");
+
+  const fadeResponse = await request("/overlay?preview=1&style=noir-fade");
+  assert.equal(fadeResponse.status, 200);
+  const fadeHtml = await fadeResponse.text();
+  assert.match(fadeHtml, /data-style="noir-wide"/, "«Затемнение» is the same plate as «Нуар 3:2»");
+  assert.match(fadeHtml, /\/noir-wide-source\.png\?v=1/);
+  assert.match(fadeHtml, /--noir-name-size:84px/);
+  assert.match(fadeHtml, /is-noir-fade/);
+  assert.match(fadeHtml, /noir-fade-plate is-lit/, "it opens lit, not in the dark");
+  assert.doesNotMatch(fadeHtml, /LAST TG FOLLOWER|noir-animated/, "nothing turns over and nothing crumbles");
+  assert.doesNotMatch(wideHtml, /noir-fade/, "«Нуар 3:2» carries none of the fading markup");
+  assert.doesNotMatch(animatedHtml, /noir-fade/, "and neither does «С анимацией»");
 
   const backSideResponse = await request("/overlay?preview=1&style=noir-animated&side=back");
   assert.equal(backSideResponse.status, 200);
@@ -186,14 +208,49 @@ test("«С анимацией» crumbles one side away and builds the other back
   assert.equal(Number(rebuild[1]) * 1000, scheduledMs, "and so does the rebuild");
   assert.equal(Number(rebuild[2]) * 1000, scheduledMs, "the rebuild waits out the whole crumble before it starts");
 
-  const sweepsAt = css.indexOf("@keyframes noir-dissolve-out");
-  const sweeps = css.slice(sweepsAt, css.indexOf("@media", sweepsAt));
+  const sweeps = keyframes(css, "noir-dissolve");
   assert.match(sweeps, /@keyframes noir-dissolve-out \{\s*from \{[^}]*mask-position: 100% 0/, "out starts on the solid end");
   assert.match(sweeps, /@keyframes noir-dissolve-in \{\s*from \{[^}]*mask-position: 0% 0/, "in starts on the empty end");
   assert.doesNotMatch(sweeps, /translate|scale|rotate|opacity/, "only the mask moves");
 
   assert.match(card, /LAST TG FOLLOWER/);
   assert.match(css, /aspect-ratio: 1280 \/ 853/, "both 3:2 styles stay 1280 × 853");
+});
+
+test("«Затемнение» is taken by light and nothing else", async () => {
+  const [css, card] = await Promise.all([
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/ui/subscriber-card.tsx", import.meta.url), "utf8"),
+  ]);
+  const block = css.slice(
+    css.indexOf(".subscriber-wrap.is-noir-fade .subscriber-card"),
+    css.indexOf('.subscriber-wrap[data-style="anime"] {'),
+  );
+  assert.ok(block.length > 200, "globals.css must keep a noir-fade block of its own");
+  assert.match(block, /animation: noir-light-out ([\d.]+)s/);
+  assert.match(block, /animation: noir-light-in ([\d.]+)s/);
+  assert.doesNotMatch(block, /rotate|mask-image|perspective|translate/, "no turning, no crumbling — only light");
+
+  const light = keyframes(css, "noir-light");
+
+  /* Filters apply in the order written.  With brightness first, the contrast
+     collapse discards it and the plate sticks at mid grey instead of clipping
+     to white — the effect quietly stops happening. */
+  assert.doesNotMatch(light, /brightness\([^)]*\) contrast\(/, "contrast has to come before brightness");
+  assert.match(light, /contrast\([^)]*\) brightness\(/);
+
+  /* contrast(0) flattens the plate to mid grey, so brightness has to reach 2 for
+     that grey to clip to white — anything less and it only ever goes pale. */
+  const flat = [...light.matchAll(/contrast\(0\) brightness\(([\d.]+)\)/g)].map((m) => Number(m[1]));
+  assert.ok(flat.length >= 4, "both sweeps need their flat-grey stops");
+  assert.ok(Math.max(...flat) >= 2, `the plate never clips to white: peak brightness ${Math.max(...flat)}`);
+  assert.ok(Math.min(...flat) === 0, "and it has to reach black at the far end");
+  assert.match(light, /100% \{[^}]*brightness\(0\); opacity: 0/, "the black has to go too, or it stays a rectangle on the stream");
+
+  const declared = /animation: noir-light-out ([\d.]+)s/.exec(block);
+  const scheduled = /LIGHT_MS = ([\d_]+)/.exec(card);
+  assert.ok(scheduled, "subscriber-card.tsx must schedule the light");
+  assert.equal(Number(declared[1]) * 1000, Number(scheduled[1].replaceAll("_", "")), "the light runs for as long as it is scheduled");
 });
 
 test("the dissolve mask is a sweep, not a curtain", async () => {
@@ -748,6 +805,8 @@ test("panel stays compact and style shows visual choices in Telegram", async () 
     assert.match(preview.body.reply_markup.inline_keyboard[0][1].text, /Нуар 3:2 · 1280×853/);
     assert.equal(preview.body.reply_markup.inline_keyboard[1][0].callback_data, `style:${installation.id}:noir-animated`);
     assert.match(preview.body.reply_markup.inline_keyboard[1][0].text, /С анимацией · 1280×853/);
+    assert.equal(preview.body.reply_markup.inline_keyboard[1][1].callback_data, `style:${installation.id}:noir-fade`);
+    assert.match(preview.body.reply_markup.inline_keyboard[1][1].text, /Затемнение · 1280×853/);
     assert.equal(preview.body.reply_markup.inline_keyboard[2][0].callback_data, `style:${installation.id}:anime`);
 
     calls.length = 0;

@@ -22,6 +22,16 @@ const DISSOLVE_MS = 1_800;
 const FACE_HOLD_MS = 12_600;
 const BACK_HOLD_MS = 5_200;
 
+/* «Затемнение» is the same 3:2 noir plate with nothing on the back of it: it is
+   overexposed until the picture washes out into white, that white sinks to
+   black, and the plate comes back the same way round.  Nothing turns and nothing
+   crumbles — the whole change is light.  LIGHT_MS follows the two animations in
+   globals.css, and the holds are the times the plate is simply there or simply
+   gone. */
+const LIGHT_MS = 1_800;
+const LIT_HOLD_MS = 20_000;
+const DARK_HOLD_MS = 6_000;
+
 function initials(name: string) {
   return name
     .trim()
@@ -316,6 +326,40 @@ function NoirAnimatedCard({
   );
 }
 
+/* Its own component for the same reason as the one above: the cycle starts over
+   whenever the style is switched on, and no other style pays for the timer.
+   The plate carries the black the card used to carry, so that when the light has
+   finished taking it there is nothing left on the stream — a card that faded to
+   black would still be a black rectangle over the game. */
+function NoirFadeCard({ alerting, face }: { alerting: boolean; face: ReactNode }) {
+  const [lit, setLit] = useState(true);
+  const [changing, setChanging] = useState(false);
+
+  useEffect(() => {
+    /* Light is not something that can be stopped halfway and started again. */
+    if (changing) return;
+    /* Never go dark on a subscriber who is arriving, and come straight back if
+       one arrives while the plate is away. */
+    if (alerting && lit) return;
+    const hold = alerting ? 0 : lit ? LIT_HOLD_MS : DARK_HOLD_MS;
+    const timer = setTimeout(() => {
+      setLit((shown) => !shown);
+      setChanging(true);
+    }, hold);
+    return () => clearTimeout(timer);
+  }, [alerting, changing, lit]);
+
+  useEffect(() => {
+    if (!changing) return;
+    const timer = setTimeout(() => setChanging(false), LIGHT_MS);
+    return () => clearTimeout(timer);
+  }, [changing, lit]);
+
+  const state = changing ? (lit ? "is-arriving" : "is-leaving") : lit ? "is-lit" : "";
+
+  return <div className={`noir-fade-plate ${state}`}>{face}</div>;
+}
+
 export function SubscriberCard({
   subscriber,
   community,
@@ -338,10 +382,11 @@ export function SubscriberCard({
   const animeLike = style === "anime";
   const noirLike = style === "noir";
   const noirAnimated = style === "noir-animated";
-  const noirWideLike = style === "noir-wide" || noirAnimated;
-  /* data-style stays noir-wide so the face is that art down to the pixel — the
-     turn and the back plate hang off .is-noir-animated instead, and nothing
-     written for them can reach the static style. */
+  const noirFade = style === "noir-fade";
+  const noirWideLike = style === "noir-wide" || noirAnimated || noirFade;
+  /* data-style stays noir-wide for all three, so every one of them draws that
+     art down to the pixel — what each does with it hangs off its own class
+     instead, and nothing written for them can reach the static style. */
   const renderedStyle = noirWideLike ? "noir-wide" : style;
   const waiting = !subscriber;
   const name = subscriber?.name ?? "Ждём нового подписчика";
@@ -464,24 +509,24 @@ export function SubscriberCard({
 
   return (
     <div
-      className={`subscriber-wrap ${noirAnimated ? "is-noir-animated" : ""}`}
+      className={`subscriber-wrap ${noirAnimated ? "is-noir-animated" : ""} ${noirFade ? "is-noir-fade" : ""}`}
       data-style={renderedStyle}
       data-waiting={waiting || undefined}
       data-testid="subscriber-design"
     >
       <article className={`subscriber-card phase-${phase}`} aria-live="polite">
-        {/* Exit, enter and the celebration window all belong to the nickname,
-            and the nickname the alert is about is the one on the face. */}
-        {noirAnimated
-          ? (
-            <NoirAnimatedCard
-              alerting={phase !== "idle" || celebrating}
-              face={face}
-              name={displayedName}
-              startOnBack={previewSide === "back"}
-            />
-          )
-          : face}
+        {/* Exit, enter and the celebration window all belong to the nickname, so
+            an alert is the one thing that keeps the plate where it can be read. */}
+        {noirAnimated && (
+          <NoirAnimatedCard
+            alerting={phase !== "idle" || celebrating}
+            face={face}
+            name={displayedName}
+            startOnBack={previewSide === "back"}
+          />
+        )}
+        {noirFade && <NoirFadeCard alerting={phase !== "idle" || celebrating} face={face} />}
+        {!noirAnimated && !noirFade && face}
       </article>
     </div>
   );

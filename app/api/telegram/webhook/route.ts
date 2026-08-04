@@ -49,6 +49,7 @@ const STYLE_LABELS: Record<OverlayStyle, string> = {
   noir: "Нуар",
   "noir-wide": "Нуар 3:2",
   "noir-animated": "С анимацией",
+  "noir-fade": "Затемнение",
   graphite: "Графит",
   paper: "Светлый",
   mono: "Только текст",
@@ -105,7 +106,9 @@ function subscriberAvatarUrl(baseUrl: string, installation: StreamerInstallation
 }
 
 function overlayDimensions(style: OverlayStyle) {
-  return style === "noir-wide" || style === "noir-animated" ? "1280 × 853" : "420 × 420";
+  return style === "noir-wide" || style === "noir-animated" || style === "noir-fade"
+    ? "1280 × 853"
+    : "420 × 420";
 }
 
 function installationPanelText(installation: StreamerInstallation, baseUrl: string) {
@@ -161,6 +164,7 @@ function styleKeyboard(installation: StreamerInstallation) {
       ],
       [
         { text: `${installation.style === "noir-animated" ? "✓ " : ""}С анимацией · 1280×853`, callback_data: `style:${installation.id}:noir-animated` },
+        { text: `${installation.style === "noir-fade" ? "✓ " : ""}Затемнение · 1280×853`, callback_data: `style:${installation.id}:noir-fade` },
       ],
       [
         { text: `${installation.style === "anime" ? "✓ " : ""}Аниме`, callback_data: `style:${installation.id}:anime` },
@@ -546,7 +550,7 @@ export async function POST(request: Request) {
   if (message?.text?.startsWith("/help")) {
     await telegramCall("sendMessage", {
       chat_id: message.chat.id,
-      text: "1. Откройте /panel\n2. Нажмите кнопку выбора группы или канала\n3. Выберите нужный чат\n4. Скопируйте OBS-ссылку\n5. Добавьте её как Browser Source: 420 × 420 для обычных стилей или 1280 × 853 для «Нуар 3:2» и «С анимацией»\n\nВсё остальное бот сделает сам.",
+      text: "1. Откройте /panel\n2. Нажмите кнопку выбора группы или канала\n3. Выберите нужный чат\n4. Скопируйте OBS-ссылку\n5. Добавьте её как Browser Source: 420 × 420 для обычных стилей или 1280 × 853 для «Нуар 3:2», «С анимацией» и «Затемнение»\n\nВсё остальное бот сделает сам.",
     });
     return Response.json({ ok: true });
   }

@@ -38,7 +38,7 @@ const SWAP_TIMINGS = {
 } as const;
 
 function swapTimings(style: OverlayStyle) {
-  return style === "noir" || style === "noir-wide" || style === "noir-animated"
+  return style === "noir" || style === "noir-wide" || style === "noir-animated" || style === "noir-fade"
     ? SWAP_TIMINGS.noir
     : SWAP_TIMINGS.base;
 }

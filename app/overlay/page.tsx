@@ -2,7 +2,7 @@ import { Overlay } from "../ui/overlay";
 import type { OverlayStyle } from "../ui/types";
 import { runtimeEnv } from "../../lib/runtime-env";
 
-const PREVIEW_STYLES = new Set<OverlayStyle>(["noir", "noir-wide", "noir-animated", "anime", "graphite", "paper", "mono"]);
+const PREVIEW_STYLES = new Set<OverlayStyle>(["noir", "noir-wide", "noir-animated", "noir-fade", "anime", "graphite", "paper", "mono"]);
 
 export default async function OverlayPage({
   searchParams,
