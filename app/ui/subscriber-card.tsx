@@ -22,13 +22,13 @@ const DISSOLVE_MS = 1_800;
 const FACE_HOLD_MS = 12_600;
 const BACK_HOLD_MS = 5_200;
 
-/* «Затемнение» is the same 3:2 noir plate with nothing on the back of it: it is
-   overexposed until the picture washes out into white, that white sinks to
-   black, and the plate comes back the same way round.  Nothing turns and nothing
-   crumbles — the whole change is light.  LIGHT_MS follows the two animations in
-   globals.css, and the holds are the times the plate is simply there or simply
-   gone. */
-const LIGHT_MS = 1_800;
+/* «Затемнение» is the same 3:2 noir plate with nothing on the back of it: a band
+   of light crosses it and the plate is not there behind the light, and it comes
+   back the same way round.  Nothing turns, nothing crumbles and the picture
+   itself is never recoloured — the whole change is the light passing over it.
+   LIGHT_MS follows the animations in globals.css, and the holds are the times
+   the plate is simply there or simply gone. */
+const LIGHT_MS = 2_600;
 const LIT_HOLD_MS = 20_000;
 const DARK_HOLD_MS = 6_000;
 
@@ -355,9 +355,16 @@ function NoirFadeCard({ alerting, face }: { alerting: boolean; face: ReactNode }
     return () => clearTimeout(timer);
   }, [changing, lit]);
 
-  const state = changing ? (lit ? "is-arriving" : "is-leaving") : lit ? "is-lit" : "";
+  const sweep = changing ? (lit ? "is-arriving" : "is-leaving") : "";
 
-  return <div className={`noir-fade-plate ${state}`}>{face}</div>;
+  return (
+    <>
+      <div className={`noir-fade-plate ${sweep || (lit ? "is-lit" : "")}`}>{face}</div>
+      {/* Over the plate, not part of it: the light has to go on showing where the
+          plate has already given way. */}
+      <span className={`noir-fade-beam ${sweep}`} aria-hidden="true" />
+    </>
+  );
 }
 
 export function SubscriberCard({

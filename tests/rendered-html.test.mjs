@@ -217,7 +217,7 @@ test("«С анимацией» crumbles one side away and builds the other back
   assert.match(css, /aspect-ratio: 1280 \/ 853/, "both 3:2 styles stay 1280 × 853");
 });
 
-test("«Затемнение» is taken by light and nothing else", async () => {
+test("«Затемнение» is crossed by light and nothing else", async () => {
   const [css, card] = await Promise.all([
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../app/ui/subscriber-card.tsx", import.meta.url), "utf8"),
@@ -227,30 +227,48 @@ test("«Затемнение» is taken by light and nothing else", async () => 
     css.indexOf('.subscriber-wrap[data-style="anime"] {'),
   );
   assert.ok(block.length > 200, "globals.css must keep a noir-fade block of its own");
-  assert.match(block, /animation: noir-light-out ([\d.]+)s/);
-  assert.match(block, /animation: noir-light-in ([\d.]+)s/);
-  assert.doesNotMatch(block, /rotate|mask-image|perspective|translate/, "no turning, no crumbling — only light");
+  assert.doesNotMatch(block, /rotateY|perspective|noir-dissolve/, "nothing turns and nothing crumbles");
+
+  /* The picture is never recoloured.  An exposure ramp over the whole card reads
+     as the card changing colour rather than as light moving across it, which is
+     what this style is for. */
+  assert.doesNotMatch(
+    block,
+    /brightness\(|contrast\(|sepia\(|invert\(/,
+    "only light crosses the plate — the plate itself is left alone",
+  );
+
+  /* Mask and beam are two layers that have to travel together: same width, same
+     duration, same curve.  Any one of the three drifting and the light stops
+     sitting where the plate gives way. */
+  const geometry = [...block.matchAll(/(?:background|mask)-size: (\d+)% 100%/g)].map((m) => m[1]);
+  assert.ok(geometry.length >= 2, "both the mask and the beam need their geometry");
+  assert.equal(new Set(geometry).size, 1, `mask and beam are laid out differently: ${geometry.join(" vs ")}`);
+
+  const runs = [...block.matchAll(/animation: noir-(?:light|beam)-(?:out|in) ([\d.]+)s (cubic-bezier\([^)]*\)|linear|ease[\w-]*)/g)];
+  assert.equal(runs.length, 4, "each layer needs a run in each direction");
+  assert.equal(new Set(runs.map((m) => m[1])).size, 1, "the two layers must run for the same time");
+  assert.equal(new Set(runs.map((m) => m[2])).size, 1, "and over the same curve");
 
   const light = keyframes(css, "noir-light");
+  const beam = keyframes(css, "noir-beam");
+  assert.match(light, /noir-light-out \{\s*from \{[^}]*mask-position: 100% 0/, "out starts on the solid end");
+  assert.match(light, /noir-light-in \{\s*from \{[^}]*mask-position: 0% 0/, "and in starts on the empty end");
+  assert.match(beam, /noir-beam-out \{\s*from \{ background-position: 100% 0/, "the beam travels with it");
+  assert.match(beam, /noir-beam-in \{\s*from \{ background-position: 0% 0/);
 
-  /* Filters apply in the order written.  With brightness first, the contrast
-     collapse discards it and the plate sticks at mid grey instead of clipping
-     to white — the effect quietly stops happening. */
-  assert.doesNotMatch(light, /brightness\([^)]*\) contrast\(/, "contrast has to come before brightness");
-  assert.match(light, /contrast\([^)]*\) brightness\(/);
+  /* Without a bright core the band is a grey smudge rather than light. */
+  const band = [...block.matchAll(/rgba\(255,255,255,\.(\d+)\)/g)].map((m) => Number(`0.${m[1]}`));
+  assert.ok(band.length >= 4, "the band needs shoulders, not one hard stop");
+  assert.ok(Math.max(...band) >= 0.9, `the light never gets bright: peak ${Math.max(...band)}`);
 
-  /* contrast(0) flattens the plate to mid grey, so brightness has to reach 2 for
-     that grey to clip to white — anything less and it only ever goes pale. */
-  const flat = [...light.matchAll(/contrast\(0\) brightness\(([\d.]+)\)/g)].map((m) => Number(m[1]));
-  assert.ok(flat.length >= 4, "both sweeps need their flat-grey stops");
-  assert.ok(Math.max(...flat) >= 2, `the plate never clips to white: peak brightness ${Math.max(...flat)}`);
-  assert.ok(Math.min(...flat) === 0, "and it has to reach black at the far end");
-  assert.match(light, /100% \{[^}]*brightness\(0\); opacity: 0/, "the black has to go too, or it stays a rectangle on the stream");
-
-  const declared = /animation: noir-light-out ([\d.]+)s/.exec(block);
   const scheduled = /LIGHT_MS = ([\d_]+)/.exec(card);
   assert.ok(scheduled, "subscriber-card.tsx must schedule the light");
-  assert.equal(Number(declared[1]) * 1000, Number(scheduled[1].replaceAll("_", "")), "the light runs for as long as it is scheduled");
+  assert.equal(
+    Number(runs[0][1]) * 1000,
+    Number(scheduled[1].replaceAll("_", "")),
+    "the light runs for as long as it is scheduled",
+  );
 });
 
 test("the dissolve mask is a sweep, not a curtain", async () => {
