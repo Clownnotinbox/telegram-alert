@@ -1,5 +1,6 @@
 import { Overlay } from "../ui/overlay";
 import type { OverlayStyle } from "../ui/types";
+import { runtimeEnv } from "../../lib/runtime-env";
 
 const PREVIEW_STYLES = new Set<OverlayStyle>(["noir", "noir-wide", "noir-animated", "anime", "graphite", "paper", "mono"]);
 
@@ -22,6 +23,7 @@ export default async function OverlayPage({
      a waiting game. ?side=back opens on it and then carries on turning. */
   const requestedSide = Array.isArray(params.side) ? params.side[0] : params.side;
   const previewSide = requestedSide === "front" || requestedSide === "back" ? requestedSide : null;
+  const release = await runtimeEnv("RENDER_GIT_COMMIT");
   return (
     <Overlay
       preview={params.preview !== undefined}
@@ -31,6 +33,7 @@ export default async function OverlayPage({
       previewPhase={previewPhase}
       previewStyle={previewStyle}
       previewSide={previewSide}
+      release={release ?? null}
     />
   );
 }

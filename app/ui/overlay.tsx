@@ -49,6 +49,7 @@ function swapTimings(style: OverlayStyle) {
    value matches the .subscriber-label transition in globals.css. */
 const CELEBRATION_MS = 8000;
 const LABEL_FADE_MS = 220;
+const RELEASE_POLL_MS = 8_000;
 
 function playGentleChime() {
   if (typeof window === "undefined" || !new URLSearchParams(window.location.search).has("sound")) return;
@@ -82,6 +83,7 @@ export function Overlay({
   previewPhase,
   previewStyle,
   previewSide,
+  release,
 }: {
   preview: boolean;
   overlayKey: string | null;
@@ -90,6 +92,7 @@ export function Overlay({
   previewPhase: "exit" | "enter" | null;
   previewStyle: OverlayStyle | null;
   previewSide: "front" | "back" | null;
+  release: string | null;
 }) {
   const [subscriber, setSubscriber] = useState<Subscriber | null>(
     preview
@@ -125,6 +128,58 @@ export function Overlay({
   useEffect(() => {
     styleRef.current = style;
   }, [style]);
+
+  /* An OBS Browser Source keeps its already-loaded JavaScript across a Render
+     deploy. Poll the release SHA and cache-bust the page only after the new
+     release answers twice in a row, so a rolling handover cannot reload the
+     source onto an instance that is still serving the previous build. */
+  useEffect(() => {
+    if (preview || !release) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    let candidate: string | null = null;
+    let confirmations = 0;
+
+    const pollRelease = async () => {
+      try {
+        const response = await fetch(`/api/version?loaded=${encodeURIComponent(release)}`, { cache: "no-store" });
+        if (response.ok) {
+          const data = (await response.json()) as { release?: string };
+          const nextRelease = data.release;
+          if (nextRelease && nextRelease !== "local" && nextRelease !== release) {
+            if (candidate === nextRelease) confirmations += 1;
+            else {
+              candidate = nextRelease;
+              confirmations = 1;
+            }
+
+            if (confirmations >= 2 && !cancelled) {
+              cancelled = true;
+              const nextUrl = new URL(window.location.href);
+              nextUrl.searchParams.set("release", nextRelease.slice(0, 12));
+              window.location.replace(nextUrl);
+              return;
+            }
+          } else {
+            candidate = null;
+            confirmations = 0;
+          }
+        }
+      } catch {
+        // The loaded overlay stays visible while Render builds or restarts.
+        candidate = null;
+        confirmations = 0;
+      } finally {
+        if (!cancelled) timer = setTimeout(pollRelease, RELEASE_POLL_MS);
+      }
+    };
+
+    timer = setTimeout(pollRelease, RELEASE_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [preview, release]);
 
   useEffect(() => {
     let cancelled = false;

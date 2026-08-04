@@ -30,6 +30,23 @@ test("renders the self-service Telegram Alert dashboard", async () => {
   assert.doesNotMatch(html, /codex-preview/);
 });
 
+test("exposes a non-cached release marker for hands-free OBS updates", async () => {
+  const response = await request("/api/version");
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get("cache-control") ?? "", /no-store/);
+  assert.deepEqual(await response.json(), { release: "local" });
+
+  const [page, overlay] = await Promise.all([
+    readFile(new URL("../app/overlay/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/ui/overlay.tsx", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /RENDER_GIT_COMMIT/);
+  assert.match(page, /release=\{release \?\? null\}/);
+  assert.match(overlay, /fetch\(`\/api\/version\?loaded=/);
+  assert.match(overlay, /confirmations >= 2/);
+  assert.match(overlay, /window\.location\.replace\(nextUrl\)/);
+});
+
 test("renders the OBS overlay", async () => {
   const response = await request("/overlay?preview=1");
   assert.equal(response.status, 200);
